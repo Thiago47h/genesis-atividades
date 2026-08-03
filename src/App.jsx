@@ -59,14 +59,16 @@ REGRAS IMPORTANTES:
 7. Numere todas as questões sequencialmente.
 8. Use linguagem acolhedora e motivadora.
 
-FORMATO DE SAÍDA (use Markdown simples):
+FORMATO DE SAÍDA (use exatamente esta estrutura em Markdown):
 
-- NÃO escreva o nome do colégio.
-- NÃO crie cabeçalho, campos de nome, número, professora, turma ou data.
-- Comece diretamente pelo conteúdo da atividade.
-- Apresente primeiro um título curto do tema usando: ## ${config.tema}
-- Depois, quando necessário, apresente uma explicação curta e adequada à série.
-- Em seguida, coloque as questões numeradas.
+# Atividade de ${config.disciplina}
+**Tema:** ${config.tema}
+**Série:** ${config.serie} | **Data:** ___/___/______
+**Aluno(a):** ____________________________________________
+
+---
+
+(questões aqui, numeradas)
 
 ${config.gabarito ? "---\n## 📋 Gabarito do Professor\n(respostas aqui)" : ""}
 
@@ -149,45 +151,6 @@ export default function App() {
       .replace(/\n/g, '<br/>');
     return `<p>${html}</p>`;
   };
-
-  const activityHeaderHtml = () => `
-    <div class="activity-header">
-      <div class="header-logo-box">
-        <img src="/logo-genesis.png" alt="Logo do Colégio Gênesis Life" />
-      </div>
-      <div class="header-main">
-        <div class="school-name">COLÉGIO GÊNESIS LIFE</div>
-        <div class="activity-name">ATIVIDADE ADAPTADA DE ${disciplina.toUpperCase()}</div>
-      </div>
-      <div class="student-row">
-        <div><strong>Nome:</strong> <span class="line"></span></div>
-        <div class="number-field"><strong>Nº</strong> <span class="short-line"></span></div>
-      </div>
-      <div class="teacher-row">
-        <div><strong>Profª:</strong> <span class="medium-line"></span></div>
-        <div><strong>Data:</strong> ____/____/________</div>
-        <div><strong>Turma:</strong> <span class="short-line"></span></div>
-      </div>
-    </div>`;
-
-  const activityStyles = `
-    .activity-header{display:grid;grid-template-columns:180px 1fr;border:2px solid #777;border-radius:12px;overflow:hidden;margin-bottom:24px;background:#fff}
-    .header-logo-box{grid-row:1 / span 3;display:flex;align-items:center;justify-content:center;padding:10px;border-right:2px solid #777}
-    .header-logo-box img{width:150px;max-height:78px;object-fit:contain}
-    .header-main{display:grid;grid-template-rows:1fr 1fr}
-    .school-name,.activity-name{display:flex;align-items:center;justify-content:center;font-weight:800;text-align:center;padding:8px;border-bottom:2px solid #777}
-    .school-name{font-size:17px}.activity-name{font-size:18px}
-    .student-row,.teacher-row{display:grid;align-items:center;font-size:15px}
-    .student-row{grid-template-columns:1fr 150px;border-bottom:2px solid #777}
-    .teacher-row{grid-template-columns:1.1fr 1fr .9fr}
-    .student-row>div,.teacher-row>div{padding:7px 10px}
-    .student-row>div+div,.teacher-row>div+div{border-left:2px solid #777}
-    .line,.medium-line,.short-line{display:inline-block;border-bottom:1px solid #222;vertical-align:middle}
-    .line{width:75%}.medium-line{width:55%}.short-line{width:55px}
-    .number-field{text-align:center}
-    @media(max-width:640px){.activity-header{grid-template-columns:120px 1fr}.header-logo-box img{width:100px}.school-name{font-size:14px}.activity-name{font-size:15px}.student-row{grid-template-columns:1fr 90px}.teacher-row{grid-template-columns:1fr}.teacher-row>div+div{border-left:0;border-top:2px solid #777}}
-    @media print{.activity-header{break-inside:avoid;page-break-inside:avoid}.header-logo-box img{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-  `;
 
   return (
     <div style={{
@@ -406,28 +369,14 @@ export default function App() {
               border: "1px solid #eadfec", fontSize: 14, lineHeight: 1.7,
               color: "#2d1838", whiteSpace: "pre-wrap", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
             }}>
-              <style>{activityStyles}</style>
-              <div
-                dangerouslySetInnerHTML={{ __html: `${activityHeaderHtml()}${renderMarkdown(resultado)}` }}
-                style={{ overflowX: "auto" }}
-              />
+              <div dangerouslySetInnerHTML={{ __html: renderMarkdown(resultado) }} style={{ overflowX: "auto" }} />
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
               <button onClick={resetar} style={backBtnStyle}>← Nova Atividade</button>
               <button onClick={() => {
                 const printWindow = window.open('', '_blank');
                 printWindow.document.write(`<html><head><title>Atividade - ${disciplina} - ${tema}</title>
-                  <style>
-                    body{font-family:Arial,'Segoe UI',sans-serif;padding:24px;font-size:14px;line-height:1.75;color:#222;max-width:900px;margin:0 auto}
-                    h1{font-size:20px;border-bottom:2px solid #97128b;padding-bottom:8px}
-                    h2{font-size:18px;margin-top:24px;color:#111;text-transform:uppercase;background:#fff200;display:inline-block;padding:2px 5px}
-                    h3{font-size:16px;margin-top:20px}
-                    hr{border:none;border-top:1px solid #aaa;margin:22px 0}
-                    p{margin:0 0 12px}
-                    ${activityStyles}
-                    @page{size:A4;margin:12mm}
-                    @media print{body{padding:0;max-width:none}.activity-header{margin-top:0}}
-                  </style></head><body>${activityHeaderHtml()}${renderMarkdown(resultado)}</body></html>`);
+                  <style>body{font-family:'Segoe UI',sans-serif;padding:40px;font-size:14px;line-height:1.8;color:#222}h1{font-size:20px;border-bottom:2px solid #97128b;padding-bottom:8px}h2{font-size:16px;margin-top:24px;color:#97128b}hr{border:none;border-top:1px solid #ccc;margin:20px 0}@media print{body{padding:20px}}</style></head><body>${renderMarkdown(resultado)}</body></html>`);
                 printWindow.document.close();
                 printWindow.print();
               }} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>
