@@ -1,0 +1,393 @@
+import { useState } from "react";
+
+const SERIES_OPTIONS = {
+  "Educação Infantil": ["Infantil I", "Infantil II", "Infantil III"],
+  "Fundamental I": ["1º ano", "2º ano", "3º ano", "4º ano", "5º ano"],
+  "Fundamental II": ["6º ano", "7º ano", "8º ano", "9º ano"],
+};
+
+const DISCIPLINAS = {
+  "Educação Infantil": ["Linguagem", "Matemática", "Natureza e Sociedade", "Artes", "Movimento"],
+  "Fundamental I": ["Português", "Matemática", "Ciências", "História", "Geografia", "Artes", "Ed. Física", "Inglês"],
+  "Fundamental II": ["Português", "Matemática", "Ciências", "História", "Geografia", "Artes", "Ed. Física", "Inglês"],
+};
+
+const TIPOS_QUESTAO = [
+  { id: "alternativas", label: "Alternativas (A, B, C)", icon: "🔘" },
+  { id: "complete", label: "Complete a frase", icon: "✏️" },
+  { id: "relacione", label: "Relacione as colunas", icon: "🔗" },
+  { id: "texto", label: "Procure no texto", icon: "📖" },
+  { id: "desenhe", label: "Desenhe", icon: "🎨" },
+  { id: "criatividade", label: "Use sua criatividade", icon: "💡" },
+];
+
+const TEMAS_SUGERIDOS = {
+  "Português": ["Tipos de frases", "Substantivos", "Sinais de pontuação", "Interpretação de texto", "Ordem alfabética", "Sílabas"],
+  "Matemática": ["Adição e subtração", "Tabuada", "Formas geométricas", "Medidas de tempo", "Números pares e ímpares", "Frações"],
+  "Ciências": ["Corpo humano", "Animais vertebrados", "Ciclo da água", "Sistema solar", "Plantas", "Alimentação saudável"],
+  "História": ["Povos indígenas", "Independência do Brasil", "Linha do tempo", "Cultura africana", "Festas populares"],
+  "Geografia": ["Meios de transporte", "Bairro e cidade", "Regiões do Brasil", "Relevo", "Clima"],
+  "Artes": ["Cores primárias", "Releitura de obra", "Arte indígena", "Música e ritmo"],
+  "Linguagem": ["Vogais", "Nome próprio", "Rimas", "Histórias", "Parlendas"],
+  "Natureza e Sociedade": ["Animais", "Estações do ano", "Família", "Higiene"],
+  "Movimento": ["Brincadeiras", "Coordenação motora", "Jogos cooperativos"],
+  "Ed. Física": ["Esportes coletivos", "Jogos populares", "Saúde e movimento"],
+  "Inglês": ["Greetings", "Colors and numbers", "Animals", "Family members", "Food"],
+};
+
+function buildPrompt(config) {
+  const tiposSelecionados = config.tipos
+    .map((t) => TIPOS_QUESTAO.find((q) => q.id === t)?.label)
+    .join(", ");
+
+  return `Você é um especialista em educação do Colégio Gênesis Life, em Osasco-SP. Gere uma atividade escolar adaptada com as seguintes especificações:
+
+SÉRIE: ${config.serie}
+SEGMENTO: ${config.segmento}
+DISCIPLINA: ${config.disciplina}
+TEMA: ${config.tema}
+TIPOS DE QUESTÃO OBRIGATÓRIOS: ${tiposSelecionados}
+${config.gabarito ? "INCLUIR GABARITO AO FINAL PARA O PROFESSOR" : "NÃO incluir gabarito"}
+
+REGRAS IMPORTANTES:
+1. Enunciados objetivos, claros e curtos, adequados à faixa etária.
+2. Alternativas sempre com EXATAMENTE 3 opções: A, B e C.
+3. Adapte a linguagem e complexidade à série informada.
+4. Para "Desenhe" e "Use sua criatividade", crie comandos estimulantes e específicos ao tema.
+5. Para "Procure no texto", crie um pequeno texto adequado à série e faça perguntas de localização.
+6. Para "Relacione as colunas", use exatamente duas colunas claras.
+7. Numere todas as questões sequencialmente.
+8. Use linguagem acolhedora e motivadora.
+
+FORMATO DE SAÍDA (use exatamente esta estrutura em Markdown):
+
+# Atividade de ${config.disciplina}
+**Tema:** ${config.tema}
+**Série:** ${config.serie} | **Data:** ___/___/______
+**Aluno(a):** ____________________________________________
+
+---
+
+(questões aqui, numeradas)
+
+${config.gabarito ? "---\n## 📋 Gabarito do Professor\n(respostas aqui)" : ""}
+
+Gere a atividade agora. Seja criativo e pedagógico.`;
+}
+
+export default function App() {
+  const [step, setStep] = useState(1);
+  const [segmento, setSegmento] = useState("");
+  const [serie, setSerie] = useState("");
+  const [disciplina, setDisciplina] = useState("");
+  const [tema, setTema] = useState("");
+  const [tipos, setTipos] = useState(TIPOS_QUESTAO.map((t) => t.id));
+  const [gabarito, setGabarito] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [resultado, setResultado] = useState("");
+  const [error, setError] = useState("");
+
+  const toggleTipo = (id) => {
+    setTipos((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+    );
+  };
+
+  const gerarAtividade = async () => {
+    if (tipos.length === 0) {
+      setError("Selecione pelo menos um tipo de questão.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    setResultado("");
+    try {
+      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito });
+
+      // Chama a serverless function /api/gerar (a chave fica segura no servidor)
+      const response = await fetch("/api/gerar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao gerar");
+      }
+
+      setResultado(data.text);
+      setStep(4);
+    } catch (e) {
+      setError("Erro na geração. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetar = () => {
+    setStep(1);
+    setSegmento("");
+    setSerie("");
+    setDisciplina("");
+    setTema("");
+    setTipos(TIPOS_QUESTAO.map((t) => t.id));
+    setGabarito(true);
+    setResultado("");
+    setError("");
+  };
+
+  const sugestoes = TEMAS_SUGERIDOS[disciplina] || [];
+
+  const renderMarkdown = (md) => {
+    let html = md
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^---$/gm, '<hr/>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br/>');
+    return `<p>${html}</p>`;
+  };
+
+  return (
+    <div style={{
+      fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+      background: "#f0f4f3",
+      minHeight: "100vh",
+      padding: "0",
+    }}>
+      <div style={{
+        background: "linear-gradient(135deg, #1a5c4c 0%, #2a7a68 50%, #1e6b5a 100%)",
+        padding: "20px 24px",
+        color: "white",
+        display: "flex",
+        alignItems: "center",
+        gap: "14px",
+        boxShadow: "0 2px 12px rgba(26,92,76,0.3)",
+      }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 10,
+          background: "rgba(255,255,255,0.2)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 22, backdropFilter: "blur(4px)",
+        }}>📝</div>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.3px" }}>
+            Gênesis Atividades
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.85, marginTop: 1 }}>
+            Gerador de atividades adaptadas com IA
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px 40px" }}>
+        {step < 4 && (
+          <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
+            {[1, 2, 3].map((s) => (
+              <div key={s} style={{
+                flex: 1, height: 4, borderRadius: 2,
+                background: s <= step ? "#1a5c4c" : "#d0ddd9",
+                transition: "background 0.3s",
+              }} />
+            ))}
+          </div>
+        )}
+
+        {step === 1 && (
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1a3a32", margin: "0 0 4px" }}>
+              Série e Disciplina
+            </h2>
+            <p style={{ fontSize: 13, color: "#5a7a70", margin: "0 0 20px" }}>
+              Selecione o segmento, a série e a disciplina da atividade.
+            </p>
+            <label style={labelStyle}>Segmento</label>
+            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+              {Object.keys(SERIES_OPTIONS).map((seg) => (
+                <button key={seg} onClick={() => { setSegmento(seg); setSerie(""); setDisciplina(""); }}
+                  style={{ ...chipStyle, background: segmento === seg ? "#1a5c4c" : "white", color: segmento === seg ? "white" : "#2a4a42", border: segmento === seg ? "2px solid #1a5c4c" : "2px solid #c8d8d2" }}>
+                  {seg}
+                </button>
+              ))}
+            </div>
+            {segmento && (
+              <>
+                <label style={labelStyle}>Série</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                  {SERIES_OPTIONS[segmento].map((s) => (
+                    <button key={s} onClick={() => setSerie(s)}
+                      style={{ ...chipStyle, background: serie === s ? "#1a5c4c" : "white", color: serie === s ? "white" : "#2a4a42", border: serie === s ? "2px solid #1a5c4c" : "2px solid #c8d8d2" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {serie && (
+              <>
+                <label style={labelStyle}>Disciplina</label>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {DISCIPLINAS[segmento].map((d) => (
+                    <button key={d} onClick={() => setDisciplina(d)}
+                      style={{ ...chipStyle, background: disciplina === d ? "#1a5c4c" : "white", color: disciplina === d ? "white" : "#2a4a42", border: disciplina === d ? "2px solid #1a5c4c" : "2px solid #c8d8d2" }}>
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {disciplina && (
+              <button onClick={() => setStep(2)} style={nextBtnStyle}>Próximo →</button>
+            )}
+          </div>
+        )}
+
+        {step === 2 && (
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1a3a32", margin: "0 0 4px" }}>
+              Tema da Atividade
+            </h2>
+            <p style={{ fontSize: 13, color: "#5a7a70", margin: "0 0 20px" }}>
+              Digite um tema ou escolha uma sugestão abaixo.
+            </p>
+            <input type="text" placeholder="Ex: Animais do cerrado, Tabuada do 7..." value={tema} onChange={(e) => setTema(e.target.value)} style={inputStyle} />
+            {sugestoes.length > 0 && (
+              <>
+                <label style={{ ...labelStyle, marginTop: 16 }}>Sugestões para {disciplina}</label>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {sugestoes.map((s) => (
+                    <button key={s} onClick={() => setTema(s)}
+                      style={{ ...chipStyle, fontSize: 12, background: tema === s ? "#e8f5e9" : "white", border: tema === s ? "2px solid #1a5c4c" : "2px solid #d8e8e2", color: "#2a4a42" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+              <button onClick={() => setStep(1)} style={backBtnStyle}>← Voltar</button>
+              {tema.trim() && (
+                <button onClick={() => setStep(3)} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>Próximo →</button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1a3a32", margin: "0 0 4px" }}>
+              Tipos de Questão
+            </h2>
+            <p style={{ fontSize: 13, color: "#5a7a70", margin: "0 0 20px" }}>
+              Escolha quais tipos incluir na atividade.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {TIPOS_QUESTAO.map((t) => (
+                <button key={t.id} onClick={() => toggleTipo(t.id)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "12px 14px", borderRadius: 10, cursor: "pointer",
+                    background: tipos.includes(t.id) ? "#e8f5e9" : "white",
+                    border: tipos.includes(t.id) ? "2px solid #1a5c4c" : "2px solid #dce8e4",
+                    fontSize: 14, color: "#1a3a32", textAlign: "left", transition: "all 0.15s",
+                  }}>
+                  <span style={{ fontSize: 20 }}>{t.icon}</span>
+                  <span style={{ flex: 1, fontWeight: 500 }}>{t.label}</span>
+                  <span style={{
+                    width: 22, height: 22, borderRadius: 6,
+                    border: tipos.includes(t.id) ? "none" : "2px solid #b8c8c2",
+                    background: tipos.includes(t.id) ? "#1a5c4c" : "transparent",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "white", fontSize: 14, fontWeight: 700,
+                  }}>
+                    {tipos.includes(t.id) ? "✓" : ""}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              marginTop: 20, padding: "12px 14px",
+              background: "white", borderRadius: 10, border: "2px solid #dce8e4",
+            }}>
+              <span style={{ fontSize: 14, flex: 1, fontWeight: 500, color: "#1a3a32" }}>
+                Incluir gabarito para o professor?
+              </span>
+              <button onClick={() => setGabarito(!gabarito)} style={{
+                width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
+                background: gabarito ? "#1a5c4c" : "#c8d8d2",
+                position: "relative", transition: "background 0.2s",
+              }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 10, background: "white",
+                  position: "absolute", top: 3, left: gabarito ? 25 : 3, transition: "left 0.2s",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }} />
+              </button>
+            </div>
+            {error && <div style={{ color: "#c0392b", fontSize: 13, marginTop: 10 }}>{error}</div>}
+            <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+              <button onClick={() => setStep(2)} style={backBtnStyle}>← Voltar</button>
+              <button onClick={gerarAtividade} disabled={loading}
+                style={{ ...nextBtnStyle, marginTop: 0, flex: 1, opacity: loading ? 0.7 : 1 }}>
+                {loading ? "⏳ Gerando atividade..." : "✨ Gerar Atividade"}
+              </button>
+            </div>
+            {loading && (
+              <div style={{ textAlign: "center", marginTop: 20, padding: 20, background: "white", borderRadius: 12, border: "1px solid #dce8e4" }}>
+                <div style={{ fontSize: 32, marginBottom: 8, animation: "pulse 1.5s infinite" }}>🤖</div>
+                <div style={{ fontSize: 13, color: "#5a7a70" }}>
+                  Criando atividade de <strong>{disciplina}</strong> sobre <strong>{tema}</strong> para o <strong>{serie}</strong>...
+                </div>
+                <style>{`@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 4 && resultado && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+              <span style={{ background: "#e8f5e9", color: "#1a5c4c", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{serie}</span>
+              <span style={{ background: "#e3f2fd", color: "#1565c0", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{disciplina}</span>
+              <span style={{ background: "#fff3e0", color: "#e65100", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{tema}</span>
+            </div>
+            <div style={{
+              background: "white", padding: "28px 24px", borderRadius: 12,
+              border: "1px solid #dce8e4", fontSize: 14, lineHeight: 1.7,
+              color: "#1a3a32", whiteSpace: "pre-wrap", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            }}>
+              <div dangerouslySetInnerHTML={{ __html: renderMarkdown(resultado) }} style={{ overflowX: "auto" }} />
+            </div>
+            <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
+              <button onClick={resetar} style={backBtnStyle}>← Nova Atividade</button>
+              <button onClick={() => {
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`<html><head><title>Atividade - ${disciplina} - ${tema}</title>
+                  <style>body{font-family:'Segoe UI',sans-serif;padding:40px;font-size:14px;line-height:1.8;color:#222}h1{font-size:20px;border-bottom:2px solid #1a5c4c;padding-bottom:8px}h2{font-size:16px;margin-top:24px;color:#1a5c4c}hr{border:none;border-top:1px solid #ccc;margin:20px 0}@media print{body{padding:20px}}</style></head><body>${renderMarkdown(resultado)}</body></html>`);
+                printWindow.document.close();
+                printWindow.print();
+              }} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>
+                🖨️ Imprimir / Salvar PDF
+              </button>
+            </div>
+            <button onClick={() => { setStep(3); setResultado(""); }}
+              style={{ ...backBtnStyle, width: "100%", marginTop: 10, textAlign: "center", justifyContent: "center" }}>
+              🔄 Gerar outra versão (mesmo tema)
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const labelStyle = { display: "block", fontSize: 12, fontWeight: 600, color: "#3a6a5c", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" };
+const chipStyle = { padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 500, transition: "all 0.15s" };
+const inputStyle = { width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid #c8d8d2", fontSize: 14, color: "#1a3a32", outline: "none", boxSizing: "border-box", background: "white" };
+const nextBtnStyle = { display: "block", width: "100%", marginTop: 24, padding: "14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #1a5c4c, #2a7a68)", color: "white", fontSize: 15, fontWeight: 600, cursor: "pointer", transition: "opacity 0.2s" };
+const backBtnStyle = { display: "flex", alignItems: "center", padding: "12px 16px", borderRadius: 10, border: "2px solid #c8d8d2", background: "white", color: "#3a6a5c", fontSize: 14, fontWeight: 500, cursor: "pointer" };
