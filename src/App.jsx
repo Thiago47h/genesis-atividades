@@ -170,6 +170,74 @@ export default function App() {
       </div>
     </div>`;
 
+
+  const baixarWord = async () => {
+    try {
+      const logoResponse = await fetch("/logo-genesis.png");
+      if (!logoResponse.ok) throw new Error("Logo não encontrado");
+
+      const logoBlob = await logoResponse.blob();
+      const logoDataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(logoBlob);
+      });
+
+      const cabecalhoWord = activityHeaderHtml().replace(
+        'src="/logo-genesis.png"',
+        `src="${logoDataUrl}"`
+      );
+
+      const documentoWord = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ProgId" content="Word.Document">
+  <meta name="Generator" content="Gênesis Atividades">
+  <title>Atividade - ${disciplina} - ${tema}</title>
+  <style>
+    @page { size: A4; margin: 1.5cm; }
+    body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.55; color: #222; }
+    h1 { font-size: 18pt; border-bottom: 2px solid #97128b; padding-bottom: 6px; }
+    h2 { font-size: 15pt; margin-top: 18px; color: #111; text-transform: uppercase; background: #fff200; display: inline-block; padding: 2px 5px; }
+    h3 { font-size: 13pt; margin-top: 16px; }
+    hr { border: 0; border-top: 1px solid #aaa; margin: 18px 0; }
+    p { margin: 0 0 10px; }
+    ${activityStyles}
+  </style>
+</head>
+<body>
+  ${cabecalhoWord}
+  ${renderMarkdown(resultado)}
+</body>
+</html>`;
+
+      const blob = new Blob(["\ufeff", documentoWord], {
+        type: "application/msword;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const nomeSeguro = `${disciplina}-${tema}`
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9-_]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase();
+
+      link.href = url;
+      link.download = `atividade-${nomeSeguro || "genesis"}.doc`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (erro) {
+      setError("Não foi possível gerar o arquivo do Word. Tente novamente.");
+    }
+  };
   const activityStyles = `
     .activity-header{display:grid;grid-template-columns:180px 1fr;border:2px solid #777;border-radius:12px;overflow:hidden;margin-bottom:24px;background:#fff}
     .header-logo-box{grid-row:1 / span 3;display:flex;align-items:center;justify-content:center;padding:10px;border-right:2px solid #777}
@@ -414,24 +482,8 @@ export default function App() {
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
               <button onClick={resetar} style={backBtnStyle}>← Nova Atividade</button>
-              <button onClick={() => {
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`<html><head><title>Atividade - ${disciplina} - ${tema}</title>
-                  <style>
-                    body{font-family:Arial,'Segoe UI',sans-serif;padding:24px;font-size:14px;line-height:1.75;color:#222;max-width:900px;margin:0 auto}
-                    h1{font-size:20px;border-bottom:2px solid #97128b;padding-bottom:8px}
-                    h2{font-size:18px;margin-top:24px;color:#111;text-transform:uppercase;background:#fff200;display:inline-block;padding:2px 5px}
-                    h3{font-size:16px;margin-top:20px}
-                    hr{border:none;border-top:1px solid #aaa;margin:22px 0}
-                    p{margin:0 0 12px}
-                    ${activityStyles}
-                    @page{size:A4;margin:12mm}
-                    @media print{body{padding:0;max-width:none}.activity-header{margin-top:0}}
-                  </style></head><body>${activityHeaderHtml()}${renderMarkdown(resultado)}</body></html>`);
-                printWindow.document.close();
-                printWindow.print();
-              }} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>
-                🖨️ Imprimir / Salvar PDF
+              <button onClick={baixarWord} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>
+                📄 Baixar no Word
               </button>
             </div>
             <button onClick={() => { setStep(3); setResultado(""); }}
