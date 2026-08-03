@@ -155,33 +155,41 @@ export default function App() {
   return (
     <div style={{
       fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-      background: "#f0f4f3",
+      background: "#f7f4fa",
       minHeight: "100vh",
       padding: "0",
     }}>
       <div style={{
-        background: "linear-gradient(135deg, #1a5c4c 0%, #2a7a68 50%, #1e6b5a 100%)",
+        background: "linear-gradient(135deg, #4b0d63 0%, #7b126f 52%, #9b147f 100%)",
         padding: "20px 24px",
         color: "white",
         display: "flex",
         alignItems: "center",
         gap: "14px",
-        boxShadow: "0 2px 12px rgba(26,92,76,0.3)",
+        boxShadow: "0 3px 16px rgba(75,13,99,0.28)",
       }}>
         <div style={{
-          width: 44, height: 44, borderRadius: 10,
-          background: "rgba(255,255,255,0.2)",
+          width: 58, height: 58, borderRadius: 14,
+          background: "rgba(255,255,255,0.10)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 22, backdropFilter: "blur(4px)",
-        }}>📝</div>
+          backdropFilter: "blur(4px)", padding: 5, flexShrink: 0,
+        }}>
+          <img src="/logo-genesis.png" alt="Logo do Colégio Gênesis Life" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+        </div>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.3px" }}>
-            Gênesis Atividades
+          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.4px" }}>
+            Gênesis <span style={{ color: "#ffd43b" }}>Atividades</span>
           </div>
-          <div style={{ fontSize: 12, opacity: 0.85, marginTop: 1 }}>
+          <div style={{ fontSize: 12, opacity: 0.88, marginTop: 2 }}>
             Gerador de atividades adaptadas com IA
           </div>
         </div>
+        <div style={{ marginLeft: "auto", textAlign: "right", lineHeight: 1.05, display: "none" }} className="school-brand">
+          <div style={{ fontSize: 9, letterSpacing: 2, opacity: 0.9 }}>COLÉGIO</div>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>GÊNESIS</div>
+          <div style={{ fontSize: 10, color: "#ffd43b", letterSpacing: 5 }}>LIFE</div>
+        </div>
+        <style>{`@media (min-width: 640px) { .school-brand { display: block !important; } }`}</style>
       </div>
 
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px 40px" }}>
@@ -190,7 +198,7 @@ export default function App() {
             {[1, 2, 3].map((s) => (
               <div key={s} style={{
                 flex: 1, height: 4, borderRadius: 2,
-                background: s <= step ? "#1a5c4c" : "#d0ddd9",
+                background: s <= step ? "#97128b" : "#e2d7e6",
                 transition: "background 0.3s",
               }} />
             ))}
@@ -199,17 +207,17 @@ export default function App() {
 
         {step === 1 && (
           <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1a3a32", margin: "0 0 4px" }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#2d1838", margin: "0 0 4px" }}>
               Série e Disciplina
             </h2>
-            <p style={{ fontSize: 13, color: "#5a7a70", margin: "0 0 20px" }}>
+            <p style={{ fontSize: 13, color: "#765f7e", margin: "0 0 20px" }}>
               Selecione o segmento, a série e a disciplina da atividade.
             </p>
             <label style={labelStyle}>Segmento</label>
             <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               {Object.keys(SERIES_OPTIONS).map((seg) => (
                 <button key={seg} onClick={() => { setSegmento(seg); setSerie(""); setDisciplina(""); }}
-                  style={{ ...chipStyle, background: segmento === seg ? "#1a5c4c" : "white", color: segmento === seg ? "white" : "#2a4a42", border: segmento === seg ? "2px solid #1a5c4c" : "2px solid #c8d8d2" }}>
+                  style={{ ...chipStyle, background: segmento === seg ? "#97128b" : "white", color: segmento === seg ? "white" : "#3c2445", border: segmento === seg ? "2px solid #97128b" : "2px solid #dfd2e3" }}>
                   {seg}
                 </button>
               ))}
@@ -220,7 +228,7 @@ export default function App() {
                 <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
                   {SERIES_OPTIONS[segmento].map((s) => (
                     <button key={s} onClick={() => setSerie(s)}
-                      style={{ ...chipStyle, background: serie === s ? "#1a5c4c" : "white", color: serie === s ? "white" : "#2a4a42", border: serie === s ? "2px solid #1a5c4c" : "2px solid #c8d8d2" }}>
+                      style={{ ...chipStyle, background: serie === s ? "#97128b" : "white", color: serie === s ? "white" : "#3c2445", border: serie === s ? "2px solid #97128b" : "2px solid #dfd2e3" }}>
                       {s}
                     </button>
                   ))}
@@ -233,7 +241,7 @@ export default function App() {
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {DISCIPLINAS[segmento].map((d) => (
                     <button key={d} onClick={() => setDisciplina(d)}
-                      style={{ ...chipStyle, background: disciplina === d ? "#1a5c4c" : "white", color: disciplina === d ? "white" : "#2a4a42", border: disciplina === d ? "2px solid #1a5c4c" : "2px solid #c8d8d2" }}>
+                      style={{ ...chipStyle, background: disciplina === d ? "#97128b" : "white", color: disciplina === d ? "white" : "#3c2445", border: disciplina === d ? "2px solid #97128b" : "2px solid #dfd2e3" }}>
                       {d}
                     </button>
                   ))}
@@ -248,10 +256,10 @@ export default function App() {
 
         {step === 2 && (
           <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1a3a32", margin: "0 0 4px" }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#2d1838", margin: "0 0 4px" }}>
               Tema da Atividade
             </h2>
-            <p style={{ fontSize: 13, color: "#5a7a70", margin: "0 0 20px" }}>
+            <p style={{ fontSize: 13, color: "#765f7e", margin: "0 0 20px" }}>
               Digite um tema ou escolha uma sugestão abaixo.
             </p>
             <input type="text" placeholder="Ex: Animais do cerrado, Tabuada do 7..." value={tema} onChange={(e) => setTema(e.target.value)} style={inputStyle} />
@@ -261,7 +269,7 @@ export default function App() {
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {sugestoes.map((s) => (
                     <button key={s} onClick={() => setTema(s)}
-                      style={{ ...chipStyle, fontSize: 12, background: tema === s ? "#e8f5e9" : "white", border: tema === s ? "2px solid #1a5c4c" : "2px solid #d8e8e2", color: "#2a4a42" }}>
+                      style={{ ...chipStyle, fontSize: 12, background: tema === s ? "#f7e9f6" : "white", border: tema === s ? "2px solid #97128b" : "2px solid #eadfec", color: "#3c2445" }}>
                       {s}
                     </button>
                   ))}
@@ -279,10 +287,10 @@ export default function App() {
 
         {step === 3 && (
           <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1a3a32", margin: "0 0 4px" }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#2d1838", margin: "0 0 4px" }}>
               Tipos de Questão
             </h2>
-            <p style={{ fontSize: 13, color: "#5a7a70", margin: "0 0 20px" }}>
+            <p style={{ fontSize: 13, color: "#765f7e", margin: "0 0 20px" }}>
               Escolha quais tipos incluir na atividade.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -291,16 +299,16 @@ export default function App() {
                   style={{
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "12px 14px", borderRadius: 10, cursor: "pointer",
-                    background: tipos.includes(t.id) ? "#e8f5e9" : "white",
-                    border: tipos.includes(t.id) ? "2px solid #1a5c4c" : "2px solid #dce8e4",
-                    fontSize: 14, color: "#1a3a32", textAlign: "left", transition: "all 0.15s",
+                    background: tipos.includes(t.id) ? "#f7e9f6" : "white",
+                    border: tipos.includes(t.id) ? "2px solid #97128b" : "2px solid #eadfec",
+                    fontSize: 14, color: "#2d1838", textAlign: "left", transition: "all 0.15s",
                   }}>
                   <span style={{ fontSize: 20 }}>{t.icon}</span>
                   <span style={{ flex: 1, fontWeight: 500 }}>{t.label}</span>
                   <span style={{
                     width: 22, height: 22, borderRadius: 6,
-                    border: tipos.includes(t.id) ? "none" : "2px solid #b8c8c2",
-                    background: tipos.includes(t.id) ? "#1a5c4c" : "transparent",
+                    border: tipos.includes(t.id) ? "none" : "2px solid #cfbfd4",
+                    background: tipos.includes(t.id) ? "#97128b" : "transparent",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     color: "white", fontSize: 14, fontWeight: 700,
                   }}>
@@ -312,14 +320,14 @@ export default function App() {
             <div style={{
               display: "flex", alignItems: "center", gap: 10,
               marginTop: 20, padding: "12px 14px",
-              background: "white", borderRadius: 10, border: "2px solid #dce8e4",
+              background: "white", borderRadius: 10, border: "2px solid #eadfec",
             }}>
-              <span style={{ fontSize: 14, flex: 1, fontWeight: 500, color: "#1a3a32" }}>
+              <span style={{ fontSize: 14, flex: 1, fontWeight: 500, color: "#2d1838" }}>
                 Incluir gabarito para o professor?
               </span>
               <button onClick={() => setGabarito(!gabarito)} style={{
                 width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
-                background: gabarito ? "#1a5c4c" : "#c8d8d2",
+                background: gabarito ? "#97128b" : "#d8cadd",
                 position: "relative", transition: "background 0.2s",
               }}>
                 <div style={{
@@ -338,9 +346,9 @@ export default function App() {
               </button>
             </div>
             {loading && (
-              <div style={{ textAlign: "center", marginTop: 20, padding: 20, background: "white", borderRadius: 12, border: "1px solid #dce8e4" }}>
+              <div style={{ textAlign: "center", marginTop: 20, padding: 20, background: "white", borderRadius: 12, border: "1px solid #eadfec" }}>
                 <div style={{ fontSize: 32, marginBottom: 8, animation: "pulse 1.5s infinite" }}>🤖</div>
-                <div style={{ fontSize: 13, color: "#5a7a70" }}>
+                <div style={{ fontSize: 13, color: "#765f7e" }}>
                   Criando atividade de <strong>{disciplina}</strong> sobre <strong>{tema}</strong> para o <strong>{serie}</strong>...
                 </div>
                 <style>{`@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
@@ -352,14 +360,14 @@ export default function App() {
         {step === 4 && resultado && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-              <span style={{ background: "#e8f5e9", color: "#1a5c4c", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{serie}</span>
-              <span style={{ background: "#e3f2fd", color: "#1565c0", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{disciplina}</span>
-              <span style={{ background: "#fff3e0", color: "#e65100", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{tema}</span>
+              <span style={{ background: "#f7e9f6", color: "#97128b", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{serie}</span>
+              <span style={{ background: "#f0e8f8", color: "#5b2580", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{disciplina}</span>
+              <span style={{ background: "#fff7d6", color: "#7a5700", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{tema}</span>
             </div>
             <div style={{
               background: "white", padding: "28px 24px", borderRadius: 12,
-              border: "1px solid #dce8e4", fontSize: 14, lineHeight: 1.7,
-              color: "#1a3a32", whiteSpace: "pre-wrap", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+              border: "1px solid #eadfec", fontSize: 14, lineHeight: 1.7,
+              color: "#2d1838", whiteSpace: "pre-wrap", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
             }}>
               <div dangerouslySetInnerHTML={{ __html: renderMarkdown(resultado) }} style={{ overflowX: "auto" }} />
             </div>
@@ -368,7 +376,7 @@ export default function App() {
               <button onClick={() => {
                 const printWindow = window.open('', '_blank');
                 printWindow.document.write(`<html><head><title>Atividade - ${disciplina} - ${tema}</title>
-                  <style>body{font-family:'Segoe UI',sans-serif;padding:40px;font-size:14px;line-height:1.8;color:#222}h1{font-size:20px;border-bottom:2px solid #1a5c4c;padding-bottom:8px}h2{font-size:16px;margin-top:24px;color:#1a5c4c}hr{border:none;border-top:1px solid #ccc;margin:20px 0}@media print{body{padding:20px}}</style></head><body>${renderMarkdown(resultado)}</body></html>`);
+                  <style>body{font-family:'Segoe UI',sans-serif;padding:40px;font-size:14px;line-height:1.8;color:#222}h1{font-size:20px;border-bottom:2px solid #97128b;padding-bottom:8px}h2{font-size:16px;margin-top:24px;color:#97128b}hr{border:none;border-top:1px solid #ccc;margin:20px 0}@media print{body{padding:20px}}</style></head><body>${renderMarkdown(resultado)}</body></html>`);
                 printWindow.document.close();
                 printWindow.print();
               }} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>
@@ -386,8 +394,8 @@ export default function App() {
   );
 }
 
-const labelStyle = { display: "block", fontSize: 12, fontWeight: 600, color: "#3a6a5c", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" };
-const chipStyle = { padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 500, transition: "all 0.15s" };
-const inputStyle = { width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid #c8d8d2", fontSize: 14, color: "#1a3a32", outline: "none", boxSizing: "border-box", background: "white" };
-const nextBtnStyle = { display: "block", width: "100%", marginTop: 24, padding: "14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #1a5c4c, #2a7a68)", color: "white", fontSize: 15, fontWeight: 600, cursor: "pointer", transition: "opacity 0.2s" };
-const backBtnStyle = { display: "flex", alignItems: "center", padding: "12px 16px", borderRadius: 10, border: "2px solid #c8d8d2", background: "white", color: "#3a6a5c", fontSize: 14, fontWeight: 500, cursor: "pointer" };
+const labelStyle = { display: "block", fontSize: 12, fontWeight: 700, color: "#7b2b78", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" };
+const chipStyle = { padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all 0.15s", boxShadow: "0 1px 2px rgba(75,13,99,0.04)" };
+const inputStyle = { width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid #dfd2e3", fontSize: 14, color: "#2d1838", outline: "none", boxSizing: "border-box", background: "white" };
+const nextBtnStyle = { display: "block", width: "100%", marginTop: 24, padding: "14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #ffd43b, #ffc928)", color: "#35133e", fontSize: 15, fontWeight: 800, cursor: "pointer", transition: "opacity 0.2s", boxShadow: "0 5px 14px rgba(255,201,40,0.24)" };
+const backBtnStyle = { display: "flex", alignItems: "center", padding: "12px 16px", borderRadius: 10, border: "2px solid #dfd2e3", background: "white", color: "#7b2b78", fontSize: 14, fontWeight: 600, cursor: "pointer" };
