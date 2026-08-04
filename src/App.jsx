@@ -229,45 +229,48 @@ export default function App() {
   <meta name="ProgId" content="Word.Document">
   <meta name="Generator" content="Gênesis Atividades">
   <title>Atividade - ${disciplina} - ${tema}</title>
+  <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
   <style>
-    @page { size: A4; margin: 1.5cm; }
+    @page { size: A4; margin: 1.5cm 1.5cm 1.5cm 1.5cm; }
     body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.6; color: #222; }
-    table.cabecalho { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    table.cabecalho td { border: 2px solid #555; padding: 8px 12px; vertical-align: middle; }
-    td.logo-cell { width: 120px; text-align: center; }
-    td.logo-cell img { width: 100px; height: auto; }
-    td.titulo-cell { text-align: center; font-weight: bold; font-size: 16pt; letter-spacing: 1px; }
-    td.subtitulo-cell { text-align: center; font-weight: bold; font-size: 13pt; letter-spacing: 2px; }
-    td.campo { font-size: 11pt; }
-    td.campo strong { font-weight: bold; }
-    .campo-linha { display: inline-block; width: 70%; border-bottom: 1px solid #222; min-height: 16px; }
-    .campo-curto { display: inline-block; width: 80px; border-bottom: 1px solid #222; min-height: 16px; }
-    .campo-medio { display: inline-block; width: 55%; border-bottom: 1px solid #222; min-height: 16px; }
-    h2 { font-size: 14pt; margin-top: 22px; color: #111; }
-    h2 span.tema-destaque { background: #fff200; padding: 2px 8px; font-weight: bold; }
-    h3 { font-size: 12pt; margin-top: 16px; font-weight: bold; }
-    hr { border: 0; border-top: 1px solid #aaa; margin: 18px 0; }
-    p { margin: 0 0 10px; }
+    h2 { font-size: 14pt; margin-top: 20px; margin-bottom: 8px; }
+    h3 { font-size: 12pt; margin-top: 16px; }
+    hr { border: 0; border-top: 1px solid #999; margin: 14px 0; }
+    p { margin: 0 0 8px; }
   </style>
 </head>
 <body>
 
-<table class="cabecalho">
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:20px;">
+  <!-- Linha 1: Logo + Nome do colégio -->
   <tr>
-    <td class="logo-cell" rowspan="2">
-      <img src="${logoDataUrl}" alt="Logo" />
+    <td rowspan="2" width="130" style="border:2px solid #555; text-align:center; vertical-align:middle; padding:10px;">
+      <img src="${logoDataUrl}" width="100" height="auto" alt="Logo" style="max-width:100px;" />
     </td>
-    <td class="titulo-cell" colspan="3">COLÉGIO GÊNESIS LIFE</td>
+    <td style="border:2px solid #555; text-align:center; vertical-align:middle; padding:10px; font-size:16pt; font-weight:bold; letter-spacing:1px;">
+      COLÉGIO GÊNESIS LIFE
+    </td>
   </tr>
+  <!-- Linha 2: Título da atividade -->
   <tr>
-    <td class="subtitulo-cell" colspan="3">ATIVIDADE ADAPTADA DE ${disciplina.toUpperCase()}</td>
+    <td style="border:2px solid #555; text-align:center; vertical-align:middle; padding:10px; font-size:13pt; font-weight:bold; letter-spacing:2px;">
+      ATIVIDADE ADAPTADA DE ${disciplina.toUpperCase()}
+    </td>
   </tr>
+  <!-- Linha 3: Data + Profª -->
   <tr>
-    <td class="campo" colspan="2"><strong>Data:</strong> ____/____/________</td>
-    <td class="campo" colspan="2"><strong>Profª:</strong> <span class="campo-medio"></span></td>
+    <td style="border:2px solid #555; padding:8px 12px; font-size:11pt;">
+      <strong>Data:</strong> ____/____/________
+    </td>
+    <td style="border:2px solid #555; padding:8px 12px; font-size:11pt;">
+      <strong>Profª:</strong> _____________________________________________
+    </td>
   </tr>
+  <!-- Linha 4: Nome -->
   <tr>
-    <td class="campo" colspan="4"><strong>Nome:</strong> <span class="campo-linha"></span></td>
+    <td colspan="2" style="border:2px solid #555; padding:8px 12px; font-size:11pt;">
+      <strong>Nome:</strong> ________________________________________________________________________________
+    </td>
   </tr>
 </table>
 
