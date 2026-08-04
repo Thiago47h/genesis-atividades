@@ -38,11 +38,17 @@ const TEMAS_SUGERIDOS = {
 
 function buildPrompt(config) {
   const tiposSelecionados = Object.entries(config.tipos)
-    .filter(([, qtd]) => qtd > 0 && TIPOS_QUESTAO.find((q) => q.id !== "outro"))
+    .filter(([, qtd]) => qtd > 0)
     .map(([id, qtd]) => {
       const tipo = TIPOS_QUESTAO.find((q) => q.id === id);
       if (!tipo || id === "outro") return null;
-      return `${tipo.label}: ${qtd} questão(ões)`;
+      const area = config.tiposArea[id];
+      const areaTexto = area === "pouco" ? " (pouco espaço para resposta)" :
+        area === "medio" ? " (espaço médio para resposta)" :
+        area === "muito" ? " (muito espaço para resposta)" :
+        area === "linhas" ? " (incluir linhas pontilhadas para o aluno escrever)" :
+        area === "quadro" ? " (incluir quadro/moldura grande para o aluno desenhar)" : "";
+      return `${tipo.label}: ${qtd} questão(ões)${areaTexto}`;
     })
     .filter(Boolean)
     .join("\n- ");
@@ -96,6 +102,7 @@ export default function App() {
   const [resultado, setResultado] = useState("");
   const [error, setError] = useState("");
   const [outroTexto, setOutroTexto] = useState("");
+  const [tiposArea, setTiposArea] = useState({});
 
   const toggleTipo = (id) => {
     setTipos((prev) => ({ ...prev, [id]: prev[id] > 0 ? 0 : 2 }));
@@ -117,7 +124,7 @@ export default function App() {
     setLoading(true);
     setResultado("");
     try {
-      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto });
+      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea });
 
       // Chama a serverless function /api/gerar (a chave fica segura no servidor)
       const response = await fetch("/api/gerar", {
@@ -152,6 +159,7 @@ export default function App() {
     setResultado("");
     setError("");
     setOutroTexto("");
+    setTiposArea({});
   };
 
   const sugestoes = TEMAS_SUGERIDOS[disciplina] || [];
@@ -444,37 +452,70 @@ ${renderMarkdown(resultado)}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {TIPOS_QUESTAO.map((t) => {
                 const ativo = tipos[t.id] > 0;
+                const areaAtual = tiposArea[t.id] || "";
+                const AREAS = [
+                  { id: "pouco", label: "Pouco espaço" },
+                  { id: "medio", label: "Médio" },
+                  { id: "muito", label: "Muito espaço" },
+                  { id: "linhas", label: "Linhas" },
+                  { id: "quadro", label: "Quadro p/ desenho" },
+                ];
                 return (
-                  <div key={t.id} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "10px 14px", borderRadius: 10,
-                    background: ativo ? "#f7e9f6" : "white",
-                    border: ativo ? "2px solid #97128b" : "2px solid #eadfec",
-                    transition: "all 0.15s",
-                  }}>
-                    <span style={{ fontSize: 20, cursor: "pointer" }} onClick={() => toggleTipo(t.id)}>{t.icon}</span>
-                    <span style={{ flex: 1, fontWeight: 500, fontSize: 14, color: "#2d1838", cursor: "pointer" }} onClick={() => toggleTipo(t.id)}>{t.label}</span>
-                    {ativo ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <button onClick={() => setQtd(t.id, tipos[t.id] - 1)} style={{
-                          width: 28, height: 28, borderRadius: 6, border: "1px solid #cfbfd4",
-                          background: "white", color: "#97128b", fontSize: 16, fontWeight: 700,
+                  <div key={t.id}>
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "10px 14px", borderRadius: ativo ? "10px 10px 0 0" : 10,
+                      background: ativo ? "#f7e9f6" : "white",
+                      border: ativo ? "2px solid #97128b" : "2px solid #eadfec",
+                      borderBottom: ativo ? "1px solid #e0c4de" : undefined,
+                      transition: "all 0.15s",
+                    }}>
+                      <span style={{ fontSize: 20, cursor: "pointer" }} onClick={() => toggleTipo(t.id)}>{t.icon}</span>
+                      <span style={{ flex: 1, fontWeight: 500, fontSize: 14, color: "#2d1838", cursor: "pointer" }} onClick={() => toggleTipo(t.id)}>{t.label}</span>
+                      {ativo ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <button onClick={() => setQtd(t.id, tipos[t.id] - 1)} style={{
+                            width: 28, height: 28, borderRadius: 6, border: "1px solid #cfbfd4",
+                            background: "white", color: "#97128b", fontSize: 16, fontWeight: 700,
+                            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>−</button>
+                          <span style={{
+                            width: 28, textAlign: "center", fontSize: 15, fontWeight: 700, color: "#97128b",
+                          }}>{tipos[t.id]}</span>
+                          <button onClick={() => setQtd(t.id, tipos[t.id] + 1)} style={{
+                            width: 28, height: 28, borderRadius: 6, border: "1px solid #cfbfd4",
+                            background: "white", color: "#97128b", fontSize: 16, fontWeight: 700,
+                            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>+</button>
+                        </div>
+                      ) : (
+                        <span onClick={() => toggleTipo(t.id)} style={{
+                          width: 22, height: 22, borderRadius: 6, border: "2px solid #cfbfd4",
                           cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>−</button>
-                        <span style={{
-                          width: 28, textAlign: "center", fontSize: 15, fontWeight: 700, color: "#97128b",
-                        }}>{tipos[t.id]}</span>
-                        <button onClick={() => setQtd(t.id, tipos[t.id] + 1)} style={{
-                          width: 28, height: 28, borderRadius: 6, border: "1px solid #cfbfd4",
-                          background: "white", color: "#97128b", fontSize: 16, fontWeight: 700,
-                          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>+</button>
+                        }} />
+                      )}
+                    </div>
+                    {ativo && (
+                      <div style={{
+                        display: "flex", gap: 5, flexWrap: "wrap", padding: "8px 12px",
+                        background: "#fdf5fd", borderRadius: "0 0 10px 10px",
+                        border: "2px solid #97128b", borderTop: "none",
+                      }}>
+                        <span style={{ fontSize: 11, color: "#765f7e", width: "100%", marginBottom: 2 }}>Área de resposta:</span>
+                        {AREAS.map((a) => (
+                          <button key={a.id} onClick={() => setTiposArea((prev) => ({
+                            ...prev, [t.id]: prev[t.id] === a.id ? "" : a.id
+                          }))} style={{
+                            padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 500,
+                            cursor: "pointer", transition: "all 0.15s",
+                            background: areaAtual === a.id ? "#97128b" : "white",
+                            color: areaAtual === a.id ? "white" : "#3c2445",
+                            border: areaAtual === a.id ? "1px solid #97128b" : "1px solid #dfd2e3",
+                          }}>
+                            {a.label}
+                          </button>
+                        ))}
                       </div>
-                    ) : (
-                      <span onClick={() => toggleTipo(t.id)} style={{
-                        width: 22, height: 22, borderRadius: 6, border: "2px solid #cfbfd4",
-                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                      }} />
                     )}
                   </div>
                 );
@@ -516,6 +557,7 @@ ${renderMarkdown(resultado)}
                 }} />
               </button>
             </div>
+
             {error && <div style={{ color: "#c0392b", fontSize: 13, marginTop: 10 }}>{error}</div>}
             <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
               <button onClick={() => setStep(2)} style={backBtnStyle}>← Voltar</button>
