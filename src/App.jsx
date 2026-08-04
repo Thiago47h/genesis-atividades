@@ -338,7 +338,7 @@ ${renderMarkdown(resultado)}
             Gênesis <span style={{ color: "#ffd43b" }}>Atividades</span>
           </div>
           <div style={{ fontSize: 12, opacity: 0.88, marginTop: 2 }}>
-            Gerador de atividades adaptadas com IA
+            Gerador de atividades by Thiago
           </div>
         </div>
         <div style={{ marginLeft: "auto", textAlign: "right", lineHeight: 1.05, display: "none" }} className="school-brand">
