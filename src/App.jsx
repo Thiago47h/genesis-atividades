@@ -69,6 +69,19 @@ PROGRESSÃO DE DIFICULDADE: Organize as questões em progressão de dificuldade:
 - ${config.niveis.medio}% intermediárias
 - ${config.niveis.dificil}% desafiadoras (para estimular o raciocínio)
 Sinalize o nível de cada questão com: (Fácil), (Intermediária) ou (Desafio) ao lado do número.` : ""}
+${config.necessidades.length > 0 ? `
+NECESSIDADES ESPECIAIS DO ALUNO — adapte a atividade inteira considerando:
+${config.necessidades.map(n => `- ${n}`).join("\n")}
+${config.outraNecessidade ? `- ${config.outraNecessidade}` : ""}
+
+Orientações de adaptação:
+- Para dificuldade de leitura: enunciados curtos, palavras simples, evitar textos longos, priorizar questões visuais.
+- Para TDAH: questões diretas, uma instrução por vez, atividade mais curta, variar tipos para manter engajamento.
+- Para TEA: comandos literais e objetivos, evitar figuras de linguagem, roteiro previsível, apoio visual.
+- Para deficiência intelectual: reduzir complexidade, usar imagens de apoio, repetir padrões, linguagem concreta.
+- Para alfabetização em processo: letras maiúsculas quando possível, frases curtas, apoio de imagem.
+- Para comandos mais curtos: uma ação por enunciado, sem frases compostas.
+Aplique APENAS as orientações relevantes às necessidades informadas acima.` : ""}
 
 REGRAS IMPORTANTES:
 1. Enunciados objetivos, claros e curtos, adequados à faixa etária.
@@ -111,6 +124,8 @@ export default function App() {
   const [tiposArea, setTiposArea] = useState({});
   const [progressao, setProgressao] = useState(false);
   const [niveis, setNiveis] = useState({ facil: 30, medio: 50, dificil: 20 });
+  const [necessidades, setNecessidades] = useState([]);
+  const [outraNecessidade, setOutraNecessidade] = useState("");
 
   const toggleTipo = (id) => {
     setTipos((prev) => ({ ...prev, [id]: prev[id] > 0 ? 0 : 2 }));
@@ -132,7 +147,7 @@ export default function App() {
     setLoading(true);
     setResultado("");
     try {
-      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, progressao, niveis });
+      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, progressao, niveis, necessidades, outraNecessidade });
 
       // Chama a serverless function /api/gerar (a chave fica segura no servidor)
       const response = await fetch("/api/gerar", {
@@ -170,6 +185,8 @@ export default function App() {
     setTiposArea({});
     setProgressao(false);
     setNiveis({ facil: 30, medio: 50, dificil: 20 });
+    setNecessidades([]);
+    setOutraNecessidade("");
   };
 
   const sugestoes = TEMAS_SUGERIDOS[disciplina] || [];
@@ -613,6 +630,63 @@ ${renderMarkdown(resultado)}
                     <span style={{ fontSize: 11, color: "#765f7e" }}>% {n.label}</span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Necessidades do aluno */}
+            <label style={{ ...labelStyle, marginTop: 20 }}>Necessidades do aluno (opcional)</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[
+                "Dificuldade de leitura",
+                "TDAH",
+                "TEA (Transtorno do Espectro Autista)",
+                "Deficiência intelectual",
+                "Alfabetização em processo",
+                "Comandos mais curtos",
+                "Outro",
+              ].map((nec) => {
+                const selecionado = necessidades.includes(nec);
+                return (
+                  <button key={nec} onClick={() => {
+                    setNecessidades((prev) =>
+                      prev.includes(nec) ? prev.filter((n) => n !== nec) : [...prev, nec]
+                    );
+                    if (nec === "Outro" && necessidades.includes("Outro")) setOutraNecessidade("");
+                  }} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "9px 14px", borderRadius: 10, cursor: "pointer",
+                    background: selecionado ? "#f7e9f6" : "white",
+                    border: selecionado ? "2px solid #97128b" : "2px solid #eadfec",
+                    fontSize: 13, color: "#2d1838", textAlign: "left", transition: "all 0.15s",
+                  }}>
+                    <span style={{
+                      width: 20, height: 20, borderRadius: 5,
+                      border: selecionado ? "none" : "2px solid #cfbfd4",
+                      background: selecionado ? "#97128b" : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "white", fontSize: 13, fontWeight: 700, flexShrink: 0,
+                    }}>
+                      {selecionado ? "✓" : ""}
+                    </span>
+                    <span style={{ fontWeight: 500 }}>{nec}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {necessidades.includes("Outro") && (
+              <div style={{ marginTop: 8 }}>
+                <input
+                  type="text"
+                  placeholder="Descreva a necessidade do aluno..."
+                  value={outraNecessidade}
+                  onChange={(e) => setOutraNecessidade(e.target.value)}
+                  style={{
+                    ...inputStyle,
+                    border: "2px solid #97128b",
+                    background: "#fdf5fd",
+                    fontSize: 13,
+                  }}
+                />
               </div>
             )}
 
