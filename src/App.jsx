@@ -63,6 +63,12 @@ TIPOS DE QUESTÃO E QUANTIDADES (siga EXATAMENTE essas quantidades):
 - ${tiposSelecionados}
 ${config.outroTexto && config.tipos.outro > 0 ? `- Tipo personalizado pelo professor: "${config.outroTexto}" — ${config.tipos.outro} questão(ões)` : ""}
 ${config.gabarito ? "INCLUIR GABARITO AO FINAL PARA O PROFESSOR" : "NÃO incluir gabarito"}
+${config.progressao ? `
+PROGRESSÃO DE DIFICULDADE: Organize as questões em progressão de dificuldade:
+- ${config.niveis.facil}% fáceis (para o aluno ganhar confiança)
+- ${config.niveis.medio}% intermediárias
+- ${config.niveis.dificil}% desafiadoras (para estimular o raciocínio)
+Sinalize o nível de cada questão com: (Fácil), (Intermediária) ou (Desafio) ao lado do número.` : ""}
 
 REGRAS IMPORTANTES:
 1. Enunciados objetivos, claros e curtos, adequados à faixa etária.
@@ -103,6 +109,8 @@ export default function App() {
   const [error, setError] = useState("");
   const [outroTexto, setOutroTexto] = useState("");
   const [tiposArea, setTiposArea] = useState({});
+  const [progressao, setProgressao] = useState(false);
+  const [niveis, setNiveis] = useState({ facil: 30, medio: 50, dificil: 20 });
 
   const toggleTipo = (id) => {
     setTipos((prev) => ({ ...prev, [id]: prev[id] > 0 ? 0 : 2 }));
@@ -124,7 +132,7 @@ export default function App() {
     setLoading(true);
     setResultado("");
     try {
-      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea });
+      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, progressao, niveis });
 
       // Chama a serverless function /api/gerar (a chave fica segura no servidor)
       const response = await fetch("/api/gerar", {
@@ -160,6 +168,8 @@ export default function App() {
     setError("");
     setOutroTexto("");
     setTiposArea({});
+    setProgressao(false);
+    setNiveis({ facil: 30, medio: 50, dificil: 20 });
   };
 
   const sugestoes = TEMAS_SUGERIDOS[disciplina] || [];
@@ -557,6 +567,55 @@ ${renderMarkdown(resultado)}
                 }} />
               </button>
             </div>
+
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              marginTop: 10, padding: "12px 14px",
+              background: "white", borderRadius: 10, border: "2px solid #eadfec",
+            }}>
+              <span style={{ fontSize: 14, flex: 1, fontWeight: 500, color: "#2d1838" }}>
+                Progressão de dificuldade?
+              </span>
+              <button onClick={() => setProgressao(!progressao)} style={{
+                width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
+                background: progressao ? "#97128b" : "#d8cadd",
+                position: "relative", transition: "background 0.2s",
+              }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 10, background: "white",
+                  position: "absolute", top: 3, left: progressao ? 25 : 3, transition: "left 0.2s",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }} />
+              </button>
+            </div>
+            {progressao && (
+              <div style={{
+                display: "flex", gap: 8, padding: "10px 14px", marginTop: 4,
+                background: "#fdf5fd", borderRadius: 10, border: "1px solid #eadfec",
+                flexWrap: "wrap", alignItems: "center",
+              }}>
+                {[
+                  { key: "facil", label: "Fáceis", color: "#2e7d32" },
+                  { key: "medio", label: "Intermediárias", color: "#e65100" },
+                  { key: "dificil", label: "Desafiadoras", color: "#c62828" },
+                ].map((n) => (
+                  <div key={n.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <input
+                      type="number"
+                      min="0" max="100"
+                      value={niveis[n.key]}
+                      onChange={(e) => setNiveis((prev) => ({ ...prev, [n.key]: Number(e.target.value) || 0 }))}
+                      style={{
+                        width: 42, padding: "4px 4px", borderRadius: 6,
+                        border: "1px solid #cfbfd4", textAlign: "center",
+                        fontSize: 13, fontWeight: 700, color: n.color, background: "white",
+                      }}
+                    />
+                    <span style={{ fontSize: 11, color: "#765f7e" }}>% {n.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {error && <div style={{ color: "#c0392b", fontSize: 13, marginTop: 10 }}>{error}</div>}
             <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
