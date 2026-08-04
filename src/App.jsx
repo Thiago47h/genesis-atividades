@@ -19,6 +19,7 @@ const TIPOS_QUESTAO = [
   { id: "texto", label: "Procure no texto", icon: "📖" },
   { id: "desenhe", label: "Desenhe", icon: "🎨" },
   { id: "criatividade", label: "Use sua criatividade", icon: "💡" },
+  { id: "outro", label: "Outro (descreva abaixo)", icon: "📝" },
 ];
 
 const TEMAS_SUGERIDOS = {
@@ -36,9 +37,15 @@ const TEMAS_SUGERIDOS = {
 };
 
 function buildPrompt(config) {
-  const tiposSelecionados = config.tipos
-    .map((t) => TIPOS_QUESTAO.find((q) => q.id === t)?.label)
-    .join(", ");
+  const tiposSelecionados = Object.entries(config.tipos)
+    .filter(([, qtd]) => qtd > 0 && TIPOS_QUESTAO.find((q) => q.id !== "outro"))
+    .map(([id, qtd]) => {
+      const tipo = TIPOS_QUESTAO.find((q) => q.id === id);
+      if (!tipo || id === "outro") return null;
+      return `${tipo.label}: ${qtd} questão(ões)`;
+    })
+    .filter(Boolean)
+    .join("\n- ");
 
   return `Você é um especialista em educação do Colégio Gênesis Life, em Osasco-SP. Gere uma atividade escolar adaptada com as seguintes especificações:
 
@@ -46,7 +53,9 @@ SÉRIE: ${config.serie}
 SEGMENTO: ${config.segmento}
 DISCIPLINA: ${config.disciplina}
 TEMA: ${config.tema}
-TIPOS DE QUESTÃO OBRIGATÓRIOS: ${tiposSelecionados}
+TIPOS DE QUESTÃO E QUANTIDADES (siga EXATAMENTE essas quantidades):
+- ${tiposSelecionados}
+${config.outroTexto && config.tipos.outro > 0 ? `- Tipo personalizado pelo professor: "${config.outroTexto}" — ${config.tipos.outro} questão(ões)` : ""}
 ${config.gabarito ? "INCLUIR GABARITO AO FINAL PARA O PROFESSOR" : "NÃO incluir gabarito"}
 
 REGRAS IMPORTANTES:
@@ -79,20 +88,28 @@ export default function App() {
   const [serie, setSerie] = useState("");
   const [disciplina, setDisciplina] = useState("");
   const [tema, setTema] = useState("");
-  const [tipos, setTipos] = useState(TIPOS_QUESTAO.map((t) => t.id));
+  const [tipos, setTipos] = useState(
+    Object.fromEntries(TIPOS_QUESTAO.map((t) => [t.id, t.id === "outro" ? 0 : 2]))
+  );
   const [gabarito, setGabarito] = useState(true);
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState("");
   const [error, setError] = useState("");
+  const [outroTexto, setOutroTexto] = useState("");
 
   const toggleTipo = (id) => {
-    setTipos((prev) =>
-      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
-    );
+    setTipos((prev) => ({ ...prev, [id]: prev[id] > 0 ? 0 : 2 }));
   };
 
+  const setQtd = (id, val) => {
+    const n = Math.max(0, Math.min(10, Number(val) || 0));
+    setTipos((prev) => ({ ...prev, [id]: n }));
+  };
+
+  const tiposAtivos = () => Object.entries(tipos).filter(([, q]) => q > 0);
+
   const gerarAtividade = async () => {
-    if (tipos.length === 0) {
+    if (tiposAtivos().length === 0) {
       setError("Selecione pelo menos um tipo de questão.");
       return;
     }
@@ -100,7 +117,7 @@ export default function App() {
     setLoading(true);
     setResultado("");
     try {
-      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito });
+      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto });
 
       // Chama a serverless function /api/gerar (a chave fica segura no servidor)
       const response = await fetch("/api/gerar", {
@@ -130,10 +147,11 @@ export default function App() {
     setSerie("");
     setDisciplina("");
     setTema("");
-    setTipos(TIPOS_QUESTAO.map((t) => t.id));
+    setTipos(Object.fromEntries(TIPOS_QUESTAO.map((t) => [t.id, t.id === "outro" ? 0 : 2])));
     setGabarito(true);
     setResultado("");
     setError("");
+    setOutroTexto("");
   };
 
   const sugestoes = TEMAS_SUGERIDOS[disciplina] || [];
@@ -399,29 +417,60 @@ export default function App() {
               Escolha quais tipos incluir na atividade.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {TIPOS_QUESTAO.map((t) => (
-                <button key={t.id} onClick={() => toggleTipo(t.id)}
-                  style={{
+              {TIPOS_QUESTAO.map((t) => {
+                const ativo = tipos[t.id] > 0;
+                return (
+                  <div key={t.id} style={{
                     display: "flex", alignItems: "center", gap: 10,
-                    padding: "12px 14px", borderRadius: 10, cursor: "pointer",
-                    background: tipos.includes(t.id) ? "#f7e9f6" : "white",
-                    border: tipos.includes(t.id) ? "2px solid #97128b" : "2px solid #eadfec",
-                    fontSize: 14, color: "#2d1838", textAlign: "left", transition: "all 0.15s",
+                    padding: "10px 14px", borderRadius: 10,
+                    background: ativo ? "#f7e9f6" : "white",
+                    border: ativo ? "2px solid #97128b" : "2px solid #eadfec",
+                    transition: "all 0.15s",
                   }}>
-                  <span style={{ fontSize: 20 }}>{t.icon}</span>
-                  <span style={{ flex: 1, fontWeight: 500 }}>{t.label}</span>
-                  <span style={{
-                    width: 22, height: 22, borderRadius: 6,
-                    border: tipos.includes(t.id) ? "none" : "2px solid #cfbfd4",
-                    background: tipos.includes(t.id) ? "#97128b" : "transparent",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "white", fontSize: 14, fontWeight: 700,
-                  }}>
-                    {tipos.includes(t.id) ? "✓" : ""}
-                  </span>
-                </button>
-              ))}
+                    <span style={{ fontSize: 20, cursor: "pointer" }} onClick={() => toggleTipo(t.id)}>{t.icon}</span>
+                    <span style={{ flex: 1, fontWeight: 500, fontSize: 14, color: "#2d1838", cursor: "pointer" }} onClick={() => toggleTipo(t.id)}>{t.label}</span>
+                    {ativo ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <button onClick={() => setQtd(t.id, tipos[t.id] - 1)} style={{
+                          width: 28, height: 28, borderRadius: 6, border: "1px solid #cfbfd4",
+                          background: "white", color: "#97128b", fontSize: 16, fontWeight: 700,
+                          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>−</button>
+                        <span style={{
+                          width: 28, textAlign: "center", fontSize: 15, fontWeight: 700, color: "#97128b",
+                        }}>{tipos[t.id]}</span>
+                        <button onClick={() => setQtd(t.id, tipos[t.id] + 1)} style={{
+                          width: 28, height: 28, borderRadius: 6, border: "1px solid #cfbfd4",
+                          background: "white", color: "#97128b", fontSize: 16, fontWeight: 700,
+                          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>+</button>
+                      </div>
+                    ) : (
+                      <span onClick={() => toggleTipo(t.id)} style={{
+                        width: 22, height: 22, borderRadius: 6, border: "2px solid #cfbfd4",
+                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      }} />
+                    )}
+                  </div>
+                );
+              })}
             </div>
+            {tipos.outro > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <input
+                  type="text"
+                  placeholder="Descreva o tipo de questão que deseja. Ex: Caça-palavras, Verdadeiro ou Falso, Cruzadinha..."
+                  value={outroTexto}
+                  onChange={(e) => setOutroTexto(e.target.value)}
+                  style={{
+                    ...inputStyle,
+                    border: "2px solid #97128b",
+                    background: "#fdf5fd",
+                    fontSize: 13,
+                  }}
+                />
+              </div>
+            )}
             <div style={{
               display: "flex", alignItems: "center", gap: 10,
               marginTop: 20, padding: "12px 14px",
