@@ -37,8 +37,8 @@ const TEMAS_SUGERIDOS = {
 };
 
 function buildPrompt(config) {
-  const tiposSelecionados = Object.entries(config.tipos)
-    .filter(([, qtd]) => qtd > 0 && TIPOS_QUESTAO.find((q) => q.id !== "outro"))
+  const tiposComOrdem = Object.entries(config.tipos)
+    .filter(([, qtd]) => qtd > 0)
     .map(([id, qtd]) => {
       const tipo = TIPOS_QUESTAO.find((q) => q.id === id);
       if (!tipo || id === "outro") return null;
@@ -48,9 +48,14 @@ function buildPrompt(config) {
         area === "muito" ? " (muito espaço para resposta)" :
         area === "linhas" ? " (incluir linhas pontilhadas para o aluno escrever)" :
         area === "quadro" ? " (incluir quadro/moldura grande para o aluno desenhar)" : "";
-      return `${tipo.label}: ${qtd} questão(ões)${areaTexto}`;
+      const ordem = config.tiposOrdem[id] || 99;
+      return { id, label: tipo.label, qtd, areaTexto, ordem };
     })
     .filter(Boolean)
+    .sort((a, b) => a.ordem - b.ordem);
+
+  const tiposSelecionados = tiposComOrdem
+    .map((t, i) => `${i + 1}º — ${t.label}: ${t.qtd} questão(ões)${t.areaTexto}`)
     .join("\n- ");
 
   return `Você é um especialista em educação do Colégio Gênesis Life, em Osasco-SP. Gere uma atividade escolar adaptada com as seguintes especificações:
@@ -59,7 +64,7 @@ SÉRIE: ${config.serie}
 SEGMENTO: ${config.segmento}
 DISCIPLINA: ${config.disciplina}
 TEMA: ${config.tema}
-TIPOS DE QUESTÃO E QUANTIDADES (siga EXATAMENTE essas quantidades):
+TIPOS DE QUESTÃO, QUANTIDADES E ORDEM (siga EXATAMENTE essas quantidades e essa ordem):
 - ${tiposSelecionados}
 ${config.outroTexto && config.tipos.outro > 0 ? `- Tipo personalizado pelo professor: "${config.outroTexto}" — ${config.tipos.outro} questão(ões)` : ""}
 ${config.gabarito ? "INCLUIR GABARITO AO FINAL PARA O PROFESSOR" : "NÃO incluir gabarito"}
@@ -125,6 +130,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [outroTexto, setOutroTexto] = useState("");
   const [tiposArea, setTiposArea] = useState({});
+  const [tiposOrdem, setTiposOrdem] = useState({});
   const [progressao, setProgressao] = useState(false);
   const [niveis, setNiveis] = useState({ facil: 30, medio: 50, dificil: 20 });
   const [letraMaiuscula, setLetraMaiuscula] = useState(false);
@@ -152,7 +158,7 @@ export default function App() {
     setLoading(true);
     setResultado("");
     try {
-      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, progressao, niveis, necessidades, outraNecessidade, letraMaiuscula, negrito });
+      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, tiposOrdem, progressao, niveis, necessidades, outraNecessidade, letraMaiuscula, negrito });
 
       // Chama a serverless function /api/gerar (a chave fica segura no servidor)
       const response = await fetch("/api/gerar", {
@@ -188,6 +194,7 @@ export default function App() {
     setError("");
     setOutroTexto("");
     setTiposArea({});
+    setTiposOrdem({});
     setProgressao(false);
     setNiveis({ facil: 30, medio: 50, dificil: 20 });
     setLetraMaiuscula(false);
@@ -506,7 +513,23 @@ ${renderMarkdown(resultado)}
                       <span style={{ fontSize: 20, cursor: "pointer" }} onClick={() => toggleTipo(t.id)}>{t.icon}</span>
                       <span style={{ flex: 1, fontWeight: 500, fontSize: 14, color: "#2d1838", cursor: "pointer" }} onClick={() => toggleTipo(t.id)}>{t.label}</span>
                       {ativo ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <select
+                            value={tiposOrdem[t.id] || ""}
+                            onChange={(e) => setTiposOrdem((prev) => ({ ...prev, [t.id]: Number(e.target.value) || "" }))}
+                            style={{
+                              width: 50, padding: "3px 2px", borderRadius: 6,
+                              border: "1px solid #cfbfd4", fontSize: 12, fontWeight: 600,
+                              color: tiposOrdem[t.id] ? "#97128b" : "#aaa",
+                              background: "white", cursor: "pointer", textAlign: "center",
+                            }}
+                          >
+                            <option value="">Nº</option>
+                            {[1,2,3,4,5,6,7].map((n) => (
+                              <option key={n} value={n}>{n}º</option>
+                            ))}
+                          </select>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                           <button onClick={() => setQtd(t.id, tipos[t.id] - 1)} style={{
                             width: 28, height: 28, borderRadius: 6, border: "1px solid #cfbfd4",
                             background: "white", color: "#97128b", fontSize: 16, fontWeight: 700,
@@ -520,6 +543,7 @@ ${renderMarkdown(resultado)}
                             background: "white", color: "#97128b", fontSize: 16, fontWeight: 700,
                             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                           }}>+</button>
+                          </div>
                         </div>
                       ) : (
                         <span onClick={() => toggleTipo(t.id)} style={{
