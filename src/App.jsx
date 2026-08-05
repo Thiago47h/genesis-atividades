@@ -84,14 +84,15 @@ Orientações de adaptação:
 Aplique APENAS as orientações relevantes às necessidades informadas acima.` : ""}
 
 REGRAS IMPORTANTES:
-1. Enunciados objetivos, claros e curtos, adequados à faixa etária.
-2. Alternativas sempre com EXATAMENTE 3 opções: A, B e C.
-3. Adapte a linguagem e complexidade à série informada.
-4. Para "Desenhe" e "Use sua criatividade", crie comandos estimulantes e específicos ao tema.
-5. Para "Procure no texto", crie um texto base adequado à série que CONTENHA todas as respostas das perguntas. O aluno deve conseguir encontrar cada resposta lendo o texto com atenção. O texto é o auxílio — as perguntas devem direcionar o aluno a procurar informações dentro dele.
-6. Para "Relacione as colunas", use exatamente duas colunas claras.
-7. Numere todas as questões sequencialmente.
-8. Use linguagem acolhedora e motivadora.
+1. SEMPRE comece a atividade com um TEXTO BASE sobre o tema. Esse texto deve conter TODAS as informações necessárias para o aluno responder TODAS as questões. O aluno lê o texto e encontra as respostas ali dentro. Coloque o texto com o título "📖 Leia o texto com atenção:" antes das questões.
+2. Enunciados objetivos, claros e curtos, adequados à faixa etária.
+3. Alternativas sempre com EXATAMENTE 3 opções: A, B e C.
+4. Adapte a linguagem e complexidade à série informada.
+5. Para "Desenhe" e "Use sua criatividade", crie comandos estimulantes e específicos ao tema.
+6. Para "Procure no texto", faça perguntas de localização referentes ao texto base.
+7. Para "Relacione as colunas", use exatamente duas colunas claras com informações do texto base.
+8. Numere todas as questões sequencialmente.
+9. Use linguagem acolhedora e motivadora.
 
 FORMATO DE SAÍDA (use Markdown simples):
 
