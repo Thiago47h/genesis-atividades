@@ -106,7 +106,7 @@ ${config.gabarito ? "---\n## 📋 Gabarito do Professor\n(respostas aqui)" : ""}
 
 Gere a atividade agora. Seja criativo e pedagógico.
 ${config.letraMaiuscula ? "IMPORTANTE: Escreva TODA a atividade em LETRAS MAIÚSCULAS." : ""}
-${config.negrito ? "IMPORTANTE: Escreva TODOS os enunciados e textos em **negrito**." : ""}`;
+${config.negrito ? "IMPORTANTE: Escreva TODA a atividade em **negrito** — enunciados, alternativas, textos, frases para completar, tudo." : ""}`;
 }
 
 export default function App() {
