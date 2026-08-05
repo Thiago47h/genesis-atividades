@@ -88,7 +88,7 @@ REGRAS IMPORTANTES:
 2. Alternativas sempre com EXATAMENTE 3 opções: A, B e C.
 3. Adapte a linguagem e complexidade à série informada.
 4. Para "Desenhe" e "Use sua criatividade", crie comandos estimulantes e específicos ao tema.
-5. Para "Procure no texto", crie um pequeno texto adequado à série e faça perguntas de localização.
+5. Para "Procure no texto", crie um texto base adequado à série que CONTENHA todas as respostas das perguntas. O aluno deve conseguir encontrar cada resposta lendo o texto com atenção. O texto é o auxílio — as perguntas devem direcionar o aluno a procurar informações dentro dele.
 6. Para "Relacione as colunas", use exatamente duas colunas claras.
 7. Numere todas as questões sequencialmente.
 8. Use linguagem acolhedora e motivadora.
@@ -104,7 +104,9 @@ FORMATO DE SAÍDA (use Markdown simples):
 
 ${config.gabarito ? "---\n## 📋 Gabarito do Professor\n(respostas aqui)" : ""}
 
-Gere a atividade agora. Seja criativo e pedagógico.`;
+Gere a atividade agora. Seja criativo e pedagógico.
+${config.letraMaiuscula ? "IMPORTANTE: Escreva TODA a atividade em LETRAS MAIÚSCULAS." : ""}
+${config.negrito ? "IMPORTANTE: Escreva TODOS os enunciados e textos em **negrito**." : ""}`;
 }
 
 export default function App() {
@@ -124,6 +126,8 @@ export default function App() {
   const [tiposArea, setTiposArea] = useState({});
   const [progressao, setProgressao] = useState(false);
   const [niveis, setNiveis] = useState({ facil: 30, medio: 50, dificil: 20 });
+  const [letraMaiuscula, setLetraMaiuscula] = useState(false);
+  const [negrito, setNegrito] = useState(false);
   const [necessidades, setNecessidades] = useState([]);
   const [outraNecessidade, setOutraNecessidade] = useState("");
 
@@ -147,7 +151,7 @@ export default function App() {
     setLoading(true);
     setResultado("");
     try {
-      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, progressao, niveis, necessidades, outraNecessidade });
+      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, progressao, niveis, necessidades, outraNecessidade, letraMaiuscula, negrito });
 
       // Chama a serverless function /api/gerar (a chave fica segura no servidor)
       const response = await fetch("/api/gerar", {
@@ -185,6 +189,8 @@ export default function App() {
     setTiposArea({});
     setProgressao(false);
     setNiveis({ facil: 30, medio: 50, dificil: 20 });
+    setLetraMaiuscula(false);
+    setNegrito(false);
     setNecessidades([]);
     setOutraNecessidade("");
   };
@@ -632,6 +638,48 @@ ${renderMarkdown(resultado)}
                 ))}
               </div>
             )}
+
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              marginTop: 10, padding: "12px 14px",
+              background: "white", borderRadius: 10, border: "2px solid #eadfec",
+            }}>
+              <span style={{ fontSize: 14, flex: 1, fontWeight: 500, color: "#2d1838" }}>
+                Letra MAIÚSCULA
+              </span>
+              <button onClick={() => setLetraMaiuscula(!letraMaiuscula)} style={{
+                width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
+                background: letraMaiuscula ? "#97128b" : "#d8cadd",
+                position: "relative", transition: "background 0.2s",
+              }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 10, background: "white",
+                  position: "absolute", top: 3, left: letraMaiuscula ? 25 : 3, transition: "left 0.2s",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }} />
+              </button>
+            </div>
+
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              marginTop: 10, padding: "12px 14px",
+              background: "white", borderRadius: 10, border: "2px solid #eadfec",
+            }}>
+              <span style={{ fontSize: 14, flex: 1, fontWeight: 500, color: "#2d1838" }}>
+                Texto em <strong>negrito</strong>
+              </span>
+              <button onClick={() => setNegrito(!negrito)} style={{
+                width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
+                background: negrito ? "#97128b" : "#d8cadd",
+                position: "relative", transition: "background 0.2s",
+              }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 10, background: "white",
+                  position: "absolute", top: 3, left: negrito ? 25 : 3, transition: "left 0.2s",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }} />
+              </button>
+            </div>
 
             {/* Necessidades do aluno */}
             <label style={{ ...labelStyle, marginTop: 20 }}>Necessidades do aluno (opcional)</label>
