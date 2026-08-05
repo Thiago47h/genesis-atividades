@@ -89,15 +89,19 @@ Orientações de adaptação:
 Aplique APENAS as orientações relevantes às necessidades informadas acima.` : ""}
 
 REGRAS IMPORTANTES:
-1. SEMPRE comece a atividade com um TEXTO BASE sobre o tema. Esse texto deve conter TODAS as informações necessárias para o aluno responder TODAS as questões. O aluno lê o texto e encontra as respostas ali dentro. Coloque o texto com o título "📖 Leia o texto com atenção:" antes das questões.
-2. Enunciados objetivos, claros e curtos, adequados à faixa etária.
-3. Alternativas sempre com EXATAMENTE 3 opções: A, B e C.
-4. Adapte a linguagem e complexidade à série informada.
-5. Para "Desenhe" e "Use sua criatividade", crie comandos estimulantes e específicos ao tema.
-6. Para "Procure no texto", faça perguntas de localização referentes ao texto base.
-7. Para "Relacione as colunas", use exatamente duas colunas claras com informações do texto base.
-8. Numere todas as questões sequencialmente.
-9. Use linguagem acolhedora e motivadora.
+1. SEMPRE comece a atividade com um TEXTO BASE sobre o tema, com título "📖 Leia o texto com atenção:". Esse texto é o CORAÇÃO da atividade — TODAS as respostas de TODAS as questões devem ser encontradas nele. O aluno lê, procura e responde.
+2. As questões de ALTERNATIVAS devem ter respostas que o aluno encontra no texto base.
+3. As questões de COMPLETE A FRASE devem usar frases retiradas ou baseadas no texto base.
+4. As questões de RELACIONE AS COLUNAS devem usar informações presentes no texto base.
+5. As questões de PROCURE NO TEXTO devem pedir que o aluno localize informações no texto base.
+6. NENHUMA questão pode exigir conhecimento que não esteja no texto base (exceto "Desenhe" e "Use sua criatividade", que são livres).
+7. Enunciados objetivos, claros e curtos, adequados à faixa etária.
+8. Alternativas sempre com EXATAMENTE 3 opções: A, B e C.
+9. Adapte a linguagem e complexidade à série informada.
+10. Para "Desenhe" e "Use sua criatividade", crie comandos estimulantes relacionados ao tema do texto.
+11. Para "Relacione as colunas", use exatamente duas colunas claras.
+12. Numere todas as questões sequencialmente.
+13. Use linguagem acolhedora e motivadora.
 
 FORMATO DE SAÍDA (use Markdown simples):
 
