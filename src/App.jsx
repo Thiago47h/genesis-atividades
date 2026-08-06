@@ -452,24 +452,24 @@ ${renderMarkdown(resultado)}
 
   const dk = modoEscuro;
   const cores = {
-    bg: dk ? "#1a1a2e" : "#f7f4fa",
-    card: dk ? "#25253e" : "white",
-    cardBorder: dk ? "#3a3a5c" : "#eadfec",
-    cardActiveBg: dk ? "#3a2050" : "#f7e9f6",
-    text: dk ? "#e8e4f0" : "#2d1838",
-    textSub: dk ? "#a99fb8" : "#5a4a6a",
-    label: dk ? "#c4a8d4" : "#6a3d7d",
-    input: dk ? "#2e2e48" : "white",
-    inputBorder: dk ? "#4a4a6c" : "#d6c6e0",
-    chipBg: dk ? "#2e2e48" : "white",
-    chipBorder: dk ? "#4a4a6c" : "#d6c6e0",
-    areaSubBg: dk ? "#2a1f3a" : "#fdf5fd",
+    bg: dk ? "#1C1B18" : "#FAF7F1",
+    card: dk ? "#2A2824" : "#FFFFFF",
+    cardBorder: dk ? "#3D3A34" : "#E7E0D3",
+    cardActiveBg: dk ? "#2E3530" : "#E1EDE9",
+    text: dk ? "#E8E4DB" : "#22201D",
+    textSub: dk ? "#9A9388" : "#8A8378",
+    label: dk ? "#B5AFA5" : "#8A8378",
+    input: dk ? "#2A2824" : "#FFFFFF",
+    inputBorder: dk ? "#3D3A34" : "#E2DACB",
+    chipBg: dk ? "#2A2824" : "#FFFFFF",
+    chipBorder: dk ? "#3D3A34" : "#E2DACB",
+    areaSubBg: dk ? "#252320" : "#F1ECDF",
   };
-  const labelStyle = { display: "block", fontSize: 12, fontWeight: 700, color: dk ? "#c4a8d4" : "#7b2b78", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" };
+  const labelStyle = { display: "block", fontSize: 12, fontWeight: 700, color: dk ? "#c4a8d4" : "#8A8378", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" };
   const chipStyle = { padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all 0.15s", boxShadow: "0 1px 2px rgba(75,13,99,0.04)" };
   const inputStyle = { width: "100%", padding: "12px 14px", borderRadius: 10, border: `2px solid ${cores.inputBorder}`, fontSize: 14, color: cores.text, outline: "none", boxSizing: "border-box", background: cores.input };
-  const nextBtnStyle = { display: "block", width: "100%", marginTop: 24, padding: "14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #ffd43b, #ffc928)", color: "#35133e", fontSize: 15, fontWeight: 800, cursor: "pointer", transition: "opacity 0.2s", boxShadow: "0 5px 14px rgba(255,201,40,0.24)" };
-  const backBtnStyle = { display: "flex", alignItems: "center", padding: "12px 16px", borderRadius: 10, border: `2px solid ${cores.cardBorder}`, background: cores.card, color: dk ? "#c4a8d4" : "#7b2b78", fontSize: 14, fontWeight: 600, cursor: "pointer" };
+  const nextBtnStyle = { display: "block", width: "100%", marginTop: 24, padding: "14px", borderRadius: 10, border: "none", background: "#C1683C", color: "#FAF3EA", fontSize: 15, fontWeight: 800, cursor: "pointer", transition: "opacity 0.2s", boxShadow: "0 4px 12px rgba(193,104,60,0.24)" };
+  const backBtnStyle = { display: "flex", alignItems: "center", padding: "12px 16px", borderRadius: 10, border: `2px solid ${cores.cardBorder}`, background: cores.card, color: dk ? "#c4a8d4" : "#8A8378", fontSize: 14, fontWeight: 600, cursor: "pointer" };
 
   const MENU = [
     { id: "dashboard", label: "Dashboard", icon: "📊" },
@@ -479,168 +479,114 @@ ${renderMarkdown(resultado)}
   ];
 
   const statCards = [
-    { label: "Alunos cadastrados", valor: totalAlunos, icon: "👩‍🎓", cor: "#97128b" },
+    { label: "Alunos cadastrados", valor: totalAlunos, icon: "👩‍🎓", cor: "#1F3A3D" },
     { label: "Atividades criadas", valor: totalAtividades, icon: "📝", cor: "#e6a817" },
   ];
 
   return (
     <div style={{
-      fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+      fontFamily: "'Work Sans', system-ui, sans-serif",
       background: cores.bg,
       minHeight: "100vh",
-      display: "flex",
       transition: "background 0.3s",
     }}>
 
-      {/* Overlay mobile */}
-      {sidebarAberta && (
-        <div onClick={() => setSidebarAberta(false)} style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 90,
-        }} />
-      )}
-
-      {/* Sidebar */}
-      <div style={{
-        width: 240, minHeight: "100vh", padding: "20px 12px",
-        background: dk ? "#12122a" : "#2e0a3e",
-        display: "flex", flexDirection: "column", gap: 6,
-        position: "fixed", left: sidebarAberta ? 0 : -260, top: 0, zIndex: 100,
-        transition: "left 0.3s",
-        boxShadow: sidebarAberta ? "4px 0 20px rgba(0,0,0,0.3)" : "none",
+      {/* Header horizontal com nav pills */}
+      <header style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "18px 32px",
+        borderBottom: `1px solid ${cores.cardBorder}`,
+        background: cores.card,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", marginBottom: 16 }}>
-          <img src="/logo-genesis.png" alt="Logo" style={{ width: 40, height: 40, objectFit: "contain" }} />
-          <div>
-            <div style={{ color: "white", fontSize: 15, fontWeight: 800 }}>Gênesis</div>
-            <div style={{ color: "#ffd43b", fontSize: 11, fontWeight: 600 }}>Atividades</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <img src="/logo-genesis.png" alt="Logo" style={{ width: 36, height: 36, objectFit: "contain" }} />
+          <div style={{ fontSize: 19, fontWeight: 600, letterSpacing: "-0.01em", color: cores.text }}>
+            Gênesis Atividades
           </div>
-          <button onClick={() => setSidebarAberta(false)} style={{
-            marginLeft: "auto", background: "none", border: "none", color: "white",
-            fontSize: 20, cursor: "pointer",
-          }}>✕</button>
         </div>
-        {MENU.map((item) => (
-          <button key={item.id} onClick={() => { setPagina(item.id); setSidebarAberta(false); }}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-              background: pagina === item.id ? "rgba(255,255,255,0.15)" : "transparent",
-              color: pagina === item.id ? "#ffd43b" : "rgba(255,255,255,0.7)",
-              fontSize: 14, fontWeight: pagina === item.id ? 700 : 500,
-              transition: "all 0.15s", textAlign: "left", width: "100%",
-            }}>
-            <span style={{ fontSize: 18 }}>{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
-        <div style={{ marginTop: "auto", padding: "12px 14px" }}>
-          <button onClick={() => setModoEscuro(!modoEscuro)} style={{
-            display: "flex", alignItems: "center", gap: 8, width: "100%",
-            padding: "10px 12px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)",
-            fontSize: 13, transition: "all 0.15s",
-          }}>
-            {dk ? "☀️ Modo claro" : "🌙 Modo escuro"}
-          </button>
-        </div>
-      </div>
 
-      {/* Main content */}
-      <div style={{ flex: 1, minHeight: "100vh" }}>
-
-        {/* Top bar */}
-        <div style={{
-          background: dk
-            ? "linear-gradient(135deg, #1a0a2e 0%, #2e1045 52%, #3a1555 100%)"
-            : "linear-gradient(135deg, #4b0d63 0%, #7b126f 52%, #9b147f 100%)",
-          padding: "16px 24px",
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          gap: "14px",
-          boxShadow: dk ? "0 3px 16px rgba(0,0,0,0.5)" : "0 3px 16px rgba(75,13,99,0.28)",
+        <nav style={{
+          display: "flex", gap: 4,
+          background: dk ? "#2A2824" : "#F1ECDF",
+          padding: 5, borderRadius: 999,
         }}>
-          <button onClick={() => setSidebarAberta(true)} style={{
-            background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8,
-            padding: "8px 10px", cursor: "pointer", color: "white", fontSize: 20,
-          }}>☰</button>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <img src="/logo-genesis.png" alt="Logo" style={{ width: 36, height: 36, objectFit: "contain" }} />
-            <div>
-              <div style={{ fontSize: 17, fontWeight: 800 }}>
-                Gênesis <span style={{ color: "#ffd43b" }}>Atividades</span>
-              </div>
-              <div style={{ fontSize: 11, opacity: 0.85 }}>Gerador de atividades adaptadas by Thiago</div>
-            </div>
-          </div>
+          {MENU.map((item) => (
+            <button key={item.id} onClick={() => setPagina(item.id)}
+              style={{
+                border: "none", cursor: "pointer", padding: "9px 14px",
+                borderRadius: 7, fontSize: 13.5, fontFamily: "inherit",
+                color: pagina === item.id ? cores.text : "#8A8378",
+                fontWeight: pagina === item.id ? 700 : 500,
+                background: pagina === item.id ? (dk ? "#3D3A34" : "#EFE9DA") : "transparent",
+                transition: "all 0.15s",
+              }}>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 13, color: "#8A8378" }}>Colégio Gênesis Life</span>
+          <button onClick={() => setModoEscuro(!modoEscuro)} style={{
+            background: "none", border: `1px solid ${cores.cardBorder}`,
+            borderRadius: 8, padding: "6px 10px", cursor: "pointer",
+            fontSize: 16, color: cores.text,
+          }}>
+            {dk ? "☀️" : "🌙"}
+          </button>
         </div>
+      </header>
 
         {/* Dashboard */}
         {pagina === "dashboard" && (
-          <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: cores.text, margin: "0 0 4px" }}>
-              Dashboard
-            </h2>
-            <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 24px" }}>
-              Visão geral do Colégio Gênesis Life
-            </p>
+          <div style={{ maxWidth: 1120, margin: "0 auto", padding: "48px 32px" }}>
+            <div style={{ marginBottom: 44 }}>
+              <h1 style={{ fontSize: 42, fontWeight: 600, letterSpacing: "-0.01em", margin: "0 0 10px", lineHeight: 1.1, color: cores.text }}>
+                Bom dia, Thiago.
+              </h1>
+              <p style={{ margin: 0, color: "#79726A", fontSize: 16 }}>Visão geral do Colégio Gênesis Life</p>
+            </div>
 
             <div style={{
-              display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-              gap: 14, marginBottom: 28,
+              display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 16, marginBottom: 48,
             }}>
               {statCards.map((card) => (
                 <div key={card.label} style={{
-                  background: cores.card, borderRadius: 14, padding: "20px 18px",
-                  border: `1px solid ${cores.cardBorder}`,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  padding: "26px 28px", background: cores.card, borderRadius: 14,
+                  boxShadow: "0 1px 2px rgba(34,32,29,0.04), 0 8px 24px rgba(34,32,29,0.05)",
                 }}>
-                  <div style={{ fontSize: 28, marginBottom: 6 }}>{card.icon}</div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: card.cor }}>{card.valor}</div>
-                  <div style={{ fontSize: 12, color: cores.textSub, marginTop: 4 }}>{card.label}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".06em", color: "#8A8378", textTransform: "uppercase", marginBottom: 12 }}>{card.label}</div>
+                  <div style={{ fontSize: 38, fontWeight: 600, color: cores.text }}>{card.valor}</div>
                 </div>
               ))}
             </div>
 
             <div style={{
-              background: cores.card, borderRadius: 14, padding: "24px 20px",
-              border: `1px solid ${cores.cardBorder}`,
+              display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 0, marginBottom: 48,
+              background: "#1F3A3D", borderRadius: 16, overflow: "hidden",
+              boxShadow: "0 12px 32px rgba(34,32,29,0.14)",
             }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 12px" }}>
-                🚀 Comece agora
-              </h3>
-              <p style={{ fontSize: 14, color: cores.textSub, margin: "0 0 16px", lineHeight: 1.5 }}>
-                Comece gerando uma atividade adaptada para seus alunos!
-              </p>
-              <button onClick={() => setPagina("gerador")} style={{
-                ...nextBtnStyle, marginTop: 0, maxWidth: 280,
-              }}>
-                ✨ Gerar Atividade
-              </button>
-            </div>
-
-            <div style={{
-              background: cores.card, borderRadius: 14, padding: "24px 20px", marginTop: 14,
-              border: `1px solid ${cores.cardBorder}`,
-            }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 12px" }}>
-                📌 Em breve
-              </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ padding: 44, color: "#F3EFE6" }}>
+                <div style={{ fontSize: 26, fontWeight: 600, marginBottom: 10 }}>Comece agora</div>
+                <p style={{ margin: "0 0 24px", fontSize: 15, lineHeight: 1.55, color: "#D8E3E1", maxWidth: 420 }}>
+                  Comece gerando uma atividade adaptada para seus alunos!
+                </p>
+                <button onClick={() => setPagina("gerador")} style={{
+                  background: "#C1683C", color: "#FAF3EA", border: "none", borderRadius: 8,
+                  padding: "13px 24px", fontWeight: 700, fontSize: 14.5, cursor: "pointer",
+                }}>
+                  Gerar atividade →
+                </button>
+              </div>
+              <div style={{ padding: 44, borderLeft: "1px solid rgba(255,255,255,0.14)" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".06em", color: "#B9C9C6", textTransform: "uppercase", marginBottom: 16 }}>Em breve</div>
                 {[
-                  { icon: "👩‍🎓", title: "Cadastro de Alunos", desc: "Perfil com necessidades — atividades personalizadas automaticamente" },
+                  "Biblioteca de atividades compartilhada",
+                  "Relatório de progresso por aluno",
+                  "Modelos alinhados à BNCC",
                 ].map((item) => (
-                  <div key={item.title} style={{
-                    display: "flex", gap: 12, alignItems: "center",
-                    padding: "12px 14px", borderRadius: 10,
-                    background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}`,
-                  }}>
-                    <span style={{ fontSize: 24 }}>{item.icon}</span>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: cores.text }}>{item.title}</div>
-                      <div style={{ fontSize: 12, color: cores.textSub }}>{item.desc}</div>
-                    </div>
-                  </div>
+                  <div key={item} style={{ fontSize: 14, color: "#E4EEEC", lineHeight: 1.5, marginBottom: 14, paddingLeft: 16, borderLeft: "2px solid #C1683C" }}>{item}</div>
                 ))}
               </div>
             </div>
@@ -696,9 +642,9 @@ ${renderMarkdown(resultado)}
                   return (
                     <button key={nec} onClick={() => toggleAlunoNecessidade(nec)} style={{
                       ...chipStyle, fontSize: 11, padding: "6px 10px",
-                      background: sel ? "#97128b" : cores.card,
+                      background: sel ? "#1F3A3D" : cores.card,
                       color: sel ? "white" : cores.text,
-                      border: sel ? "1px solid #97128b" : `1px solid ${cores.cardBorder}`,
+                      border: sel ? "1px solid #1F3A3D" : `1px solid ${cores.cardBorder}`,
                     }}>{nec}</button>
                   );
                 })}
@@ -718,7 +664,7 @@ ${renderMarkdown(resultado)}
                   {alunoForm.necessidades.filter((n) => !NECESSIDADES_OPCOES.includes(n)).map((n) => (
                     <span key={n} onClick={() => toggleAlunoNecessidade(n)} style={{
                       ...chipStyle, fontSize: 11, padding: "6px 10px", cursor: "pointer",
-                      background: "#97128b", color: "white", border: "1px solid #97128b",
+                      background: "#1F3A3D", color: "white", border: "1px solid #1F3A3D",
                     }}>{n} ✕</span>
                   ))}
                 </div>
@@ -784,7 +730,7 @@ ${renderMarkdown(resultado)}
                             {aluno.necessidades.map((n) => (
                               <span key={n} style={{
                                 fontSize: 10, padding: "2px 6px", borderRadius: 4,
-                                background: dk ? "#4a2060" : "#f3e5f5", color: dk ? "#d4a8e8" : "#7b1fa2",
+                                background: dk ? "#1F3A2E" : "#E1EDE9", color: dk ? "#7BA896" : "#1F5C3E",
                                 fontWeight: 600,
                               }}>{n}</span>
                             ))}
@@ -834,7 +780,7 @@ ${renderMarkdown(resultado)}
             {[1, 2, 3].map((s) => (
               <div key={s} style={{
                 flex: 1, height: 4, borderRadius: 2,
-                background: s <= step ? "#97128b" : "#e2d7e6",
+                background: s <= step ? "#1F3A3D" : "#E2DACB",
                 transition: "background 0.3s",
               }} />
             ))}
@@ -861,7 +807,7 @@ ${renderMarkdown(resultado)}
                 <div style={{
                   display: "flex", alignItems: "center", gap: 10, marginTop: 10,
                   padding: "10px 12px", borderRadius: 8,
-                  background: cores.cardActiveBg, border: "1px solid #97128b",
+                  background: cores.cardActiveBg, border: "1px solid #1F3A3D",
                 }}>
                   <span style={{ fontSize: 22 }}>👩‍🎓</span>
                   <div style={{ flex: 1 }}>
@@ -874,7 +820,7 @@ ${renderMarkdown(resultado)}
                         {alunoSelecionado.necessidades.map((n) => (
                           <span key={n} style={{
                             fontSize: 9, padding: "2px 6px", borderRadius: 4,
-                            background: dk ? "#4a2060" : "#f3e5f5", color: dk ? "#d4a8e8" : "#7b1fa2",
+                            background: dk ? "#1F3A2E" : "#E1EDE9", color: dk ? "#7BA896" : "#1F5C3E",
                             fontWeight: 600,
                           }}>{n}</span>
                         ))}
@@ -887,7 +833,7 @@ ${renderMarkdown(resultado)}
                 <>
                   {alunos.length === 0 ? (
                     <div style={{ fontSize: 12, color: cores.textSub, padding: "8px 0" }}>
-                      Nenhum aluno cadastrado. <span onClick={() => setPagina("alunos")} style={{ color: "#97128b", cursor: "pointer", fontWeight: 600 }}>Cadastrar →</span>
+                      Nenhum aluno cadastrado. <span onClick={() => setPagina("alunos")} style={{ color: "#1F3A3D", cursor: "pointer", fontWeight: 600 }}>Cadastrar →</span>
                     </div>
                   ) : (
                     <div style={{ maxHeight: 180, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
@@ -913,7 +859,7 @@ ${renderMarkdown(resultado)}
                             <div style={{ fontSize: 11, color: cores.textSub }}>{aluno.serie}{aluno.turma ? ` — ${aluno.turma}` : ""}</div>
                           </div>
                           {aluno.necessidades && aluno.necessidades.length > 0 && (
-                            <span style={{ fontSize: 10, color: "#97128b", fontWeight: 600 }}>{aluno.necessidades.length} nec.</span>
+                            <span style={{ fontSize: 10, color: "#1F3A3D", fontWeight: 600 }}>{aluno.necessidades.length} nec.</span>
                           )}
                         </button>
                       ))}
@@ -933,7 +879,7 @@ ${renderMarkdown(resultado)}
             <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               {Object.keys(SERIES_OPTIONS).map((seg) => (
                 <button key={seg} onClick={() => { setSegmento(seg); setSerie(""); setDisciplina(""); }}
-                  style={{ ...chipStyle, background: segmento === seg ? "#97128b" : cores.card, color: segmento === seg ? "white" : cores.text, border: segmento === seg ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
+                  style={{ ...chipStyle, background: segmento === seg ? "#1F3A3D" : cores.card, color: segmento === seg ? "white" : cores.text, border: segmento === seg ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
                   {seg}
                 </button>
               ))}
@@ -944,7 +890,7 @@ ${renderMarkdown(resultado)}
                 <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
                   {SERIES_OPTIONS[segmento].map((s) => (
                     <button key={s} onClick={() => setSerie(s)}
-                      style={{ ...chipStyle, background: serie === s ? "#97128b" : cores.card, color: serie === s ? "white" : cores.text, border: serie === s ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
+                      style={{ ...chipStyle, background: serie === s ? "#1F3A3D" : cores.card, color: serie === s ? "white" : cores.text, border: serie === s ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
                       {s}
                     </button>
                   ))}
@@ -957,7 +903,7 @@ ${renderMarkdown(resultado)}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {DISCIPLINAS[segmento].map((d) => (
                     <button key={d} onClick={() => setDisciplina(d)}
-                      style={{ ...chipStyle, background: disciplina === d ? "#97128b" : cores.card, color: disciplina === d ? "white" : cores.text, border: disciplina === d ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
+                      style={{ ...chipStyle, background: disciplina === d ? "#1F3A3D" : cores.card, color: disciplina === d ? "white" : cores.text, border: disciplina === d ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
                       {d}
                     </button>
                   ))}
@@ -985,7 +931,7 @@ ${renderMarkdown(resultado)}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {sugestoes.map((s) => (
                     <button key={s} onClick={() => setTema(s)}
-                      style={{ ...chipStyle, fontSize: 12, background: tema === s ? cores.cardActiveBg : cores.card, border: tema === s ? "2px solid #97128b" : `2px solid ${cores.cardBorder}`, color: cores.text }}>
+                      style={{ ...chipStyle, fontSize: 12, background: tema === s ? cores.cardActiveBg : cores.card, border: tema === s ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}`, color: cores.text }}>
                       {s}
                     </button>
                   ))}
@@ -1026,8 +972,8 @@ ${renderMarkdown(resultado)}
                       display: "flex", alignItems: "center", gap: 10,
                       padding: "10px 14px", borderRadius: ativo ? "10px 10px 0 0" : 10,
                       background: ativo ? cores.cardActiveBg : cores.card,
-                      border: ativo ? "2px solid #97128b" : `2px solid ${cores.cardBorder}`,
-                      borderBottom: ativo ? `1px solid ${dk ? "#4a3060" : "#e0c4de"}` : undefined,
+                      border: ativo ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}`,
+                      borderBottom: ativo ? `1px solid ${dk ? "#4a3060" : "#D4CCBD"}` : undefined,
                       transition: "all 0.15s",
                     }}>
                       <span style={{ fontSize: 20, cursor: "pointer" }} onClick={() => toggleTipo(t.id)}>{t.icon}</span>
@@ -1039,8 +985,8 @@ ${renderMarkdown(resultado)}
                             onChange={(e) => setTiposOrdem((prev) => ({ ...prev, [t.id]: Number(e.target.value) || "" }))}
                             style={{
                               width: 50, padding: "3px 2px", borderRadius: 6,
-                              border: `1px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`, fontSize: 12, fontWeight: 600,
-                              color: tiposOrdem[t.id] ? "#97128b" : (dk ? "#777" : "#aaa"),
+                              border: `1px solid ${dk ? "#4a4a6c" : "#C7BFAE"}`, fontSize: 12, fontWeight: 600,
+                              color: tiposOrdem[t.id] ? "#1F3A3D" : (dk ? "#777" : "#aaa"),
                               background: cores.card, cursor: "pointer", textAlign: "center",
                             }}
                           >
@@ -1051,23 +997,23 @@ ${renderMarkdown(resultado)}
                           </select>
                           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                           <button onClick={() => setQtd(t.id, tipos[t.id] - 1)} style={{
-                            width: 28, height: 28, borderRadius: 6, border: `1px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`,
-                            background: cores.card, color: "#97128b", fontSize: 16, fontWeight: 700,
+                            width: 28, height: 28, borderRadius: 6, border: `1px solid ${dk ? "#4a4a6c" : "#C7BFAE"}`,
+                            background: cores.card, color: "#1F3A3D", fontSize: 16, fontWeight: 700,
                             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                           }}>−</button>
                           <span style={{
-                            width: 28, textAlign: "center", fontSize: 15, fontWeight: 700, color: "#97128b",
+                            width: 28, textAlign: "center", fontSize: 15, fontWeight: 700, color: "#1F3A3D",
                           }}>{tipos[t.id]}</span>
                           <button onClick={() => setQtd(t.id, tipos[t.id] + 1)} style={{
-                            width: 28, height: 28, borderRadius: 6, border: `1px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`,
-                            background: cores.card, color: "#97128b", fontSize: 16, fontWeight: 700,
+                            width: 28, height: 28, borderRadius: 6, border: `1px solid ${dk ? "#4a4a6c" : "#C7BFAE"}`,
+                            background: cores.card, color: "#1F3A3D", fontSize: 16, fontWeight: 700,
                             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                           }}>+</button>
                           </div>
                         </div>
                       ) : (
                         <span onClick={() => toggleTipo(t.id)} style={{
-                          width: 22, height: 22, borderRadius: 6, border: `2px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`,
+                          width: 22, height: 22, borderRadius: 6, border: `2px solid ${dk ? "#4a4a6c" : "#C7BFAE"}`,
                           cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                         }} />
                       )}
@@ -1076,7 +1022,7 @@ ${renderMarkdown(resultado)}
                       <div style={{
                         display: "flex", gap: 5, flexWrap: "wrap", padding: "8px 12px",
                         background: cores.areaSubBg, borderRadius: "0 0 10px 10px",
-                        border: "2px solid #97128b", borderTop: "none",
+                        border: "2px solid #1F3A3D", borderTop: "none",
                       }}>
                         <span style={{ fontSize: 11, color: cores.textSub, width: "100%", marginBottom: 2 }}>Área de resposta:</span>
                         {AREAS.map((a) => (
@@ -1085,9 +1031,9 @@ ${renderMarkdown(resultado)}
                           }))} style={{
                             padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 500,
                             cursor: "pointer", transition: "all 0.15s",
-                            background: areaAtual === a.id ? "#97128b" : cores.card,
+                            background: areaAtual === a.id ? "#1F3A3D" : cores.card,
                             color: areaAtual === a.id ? "white" : cores.text,
-                            border: areaAtual === a.id ? "1px solid #97128b" : `1px solid ${cores.cardBorder}`,
+                            border: areaAtual === a.id ? "1px solid #1F3A3D" : `1px solid ${cores.cardBorder}`,
                           }}>
                             {a.label}
                           </button>
@@ -1107,7 +1053,7 @@ ${renderMarkdown(resultado)}
                   onChange={(e) => setOutroTexto(e.target.value)}
                   style={{
                     ...inputStyle,
-                    border: "2px solid #97128b",
+                    border: "2px solid #1F3A3D",
                     background: cores.areaSubBg,
                     fontSize: 13,
                   }}
@@ -1124,7 +1070,7 @@ ${renderMarkdown(resultado)}
               </span>
               <button onClick={() => setGabarito(!gabarito)} style={{
                 width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
-                background: gabarito ? "#97128b" : "#d8cadd",
+                background: gabarito ? "#1F3A3D" : "#C7BFAE",
                 position: "relative", transition: "background 0.2s",
               }}>
                 <div style={{
@@ -1145,7 +1091,7 @@ ${renderMarkdown(resultado)}
               </span>
               <button onClick={() => setProgressao(!progressao)} style={{
                 width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
-                background: progressao ? "#97128b" : "#d8cadd",
+                background: progressao ? "#1F3A3D" : "#C7BFAE",
                 position: "relative", transition: "background 0.2s",
               }}>
                 <div style={{
@@ -1174,7 +1120,7 @@ ${renderMarkdown(resultado)}
                       onChange={(e) => setNiveis((prev) => ({ ...prev, [n.key]: Number(e.target.value) || 0 }))}
                       style={{
                         width: 42, padding: "4px 4px", borderRadius: 6,
-                        border: `1px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`, textAlign: "center",
+                        border: `1px solid ${dk ? "#4a4a6c" : "#C7BFAE"}`, textAlign: "center",
                         fontSize: 13, fontWeight: 700, color: n.color, background: cores.card,
                       }}
                     />
@@ -1194,7 +1140,7 @@ ${renderMarkdown(resultado)}
               </span>
               <button onClick={() => setLetraMaiuscula(!letraMaiuscula)} style={{
                 width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
-                background: letraMaiuscula ? "#97128b" : "#d8cadd",
+                background: letraMaiuscula ? "#1F3A3D" : "#C7BFAE",
                 position: "relative", transition: "background 0.2s",
               }}>
                 <div style={{
@@ -1215,7 +1161,7 @@ ${renderMarkdown(resultado)}
               </span>
               <button onClick={() => setNegrito(!negrito)} style={{
                 width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
-                background: negrito ? "#97128b" : "#d8cadd",
+                background: negrito ? "#1F3A3D" : "#C7BFAE",
                 position: "relative", transition: "background 0.2s",
               }}>
                 <div style={{
@@ -1249,13 +1195,13 @@ ${renderMarkdown(resultado)}
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "9px 14px", borderRadius: 10, cursor: "pointer",
                     background: selecionado ? cores.cardActiveBg : cores.card,
-                    border: selecionado ? "2px solid #97128b" : `2px solid ${cores.cardBorder}`,
+                    border: selecionado ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}`,
                     fontSize: 13, color: cores.text, textAlign: "left", transition: "all 0.15s",
                   }}>
                     <span style={{
                       width: 20, height: 20, borderRadius: 5,
-                      border: selecionado ? "none" : `2px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`,
-                      background: selecionado ? "#97128b" : "transparent",
+                      border: selecionado ? "none" : `2px solid ${dk ? "#4a4a6c" : "#C7BFAE"}`,
+                      background: selecionado ? "#1F3A3D" : "transparent",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       color: "white", fontSize: 13, fontWeight: 700, flexShrink: 0,
                     }}>
@@ -1275,7 +1221,7 @@ ${renderMarkdown(resultado)}
                   onChange={(e) => setOutraNecessidade(e.target.value)}
                   style={{
                     ...inputStyle,
-                    border: "2px solid #97128b",
+                    border: "2px solid #1F3A3D",
                     background: cores.areaSubBg,
                     fontSize: 13,
                   }}
@@ -1306,7 +1252,7 @@ ${renderMarkdown(resultado)}
         {step === 4 && resultado && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-              <span style={{ background: cores.cardActiveBg, color: "#97128b", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{serie}</span>
+              <span style={{ background: cores.cardActiveBg, color: "#1F3A3D", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{serie}</span>
               <span style={{ background: "#f0e8f8", color: "#5b2580", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{disciplina}</span>
               <span style={{ background: "#fff7d6", color: "#7a5700", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{tema}</span>
             </div>
