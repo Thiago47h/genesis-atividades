@@ -445,7 +445,7 @@ ${renderMarkdown(resultado)}
             <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               {Object.keys(SERIES_OPTIONS).map((seg) => (
                 <button key={seg} onClick={() => { setSegmento(seg); setSerie(""); setDisciplina(""); }}
-                  style={{ ...chipStyle, background: segmento === seg ? "#97128b" : cores.card, color: segmento === seg ? "white" : "#3c2445", border: segmento === seg ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
+                  style={{ ...chipStyle, background: segmento === seg ? "#97128b" : cores.card, color: segmento === seg ? "white" : cores.text, border: segmento === seg ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
                   {seg}
                 </button>
               ))}
@@ -456,7 +456,7 @@ ${renderMarkdown(resultado)}
                 <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
                   {SERIES_OPTIONS[segmento].map((s) => (
                     <button key={s} onClick={() => setSerie(s)}
-                      style={{ ...chipStyle, background: serie === s ? "#97128b" : cores.card, color: serie === s ? "white" : "#3c2445", border: serie === s ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
+                      style={{ ...chipStyle, background: serie === s ? "#97128b" : cores.card, color: serie === s ? "white" : cores.text, border: serie === s ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
                       {s}
                     </button>
                   ))}
@@ -469,7 +469,7 @@ ${renderMarkdown(resultado)}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {DISCIPLINAS[segmento].map((d) => (
                     <button key={d} onClick={() => setDisciplina(d)}
-                      style={{ ...chipStyle, background: disciplina === d ? "#97128b" : cores.card, color: disciplina === d ? "white" : "#3c2445", border: disciplina === d ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
+                      style={{ ...chipStyle, background: disciplina === d ? "#97128b" : cores.card, color: disciplina === d ? "white" : cores.text, border: disciplina === d ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
                       {d}
                     </button>
                   ))}
