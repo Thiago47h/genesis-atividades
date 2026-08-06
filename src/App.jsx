@@ -445,7 +445,7 @@ ${renderMarkdown(resultado)}
             <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               {Object.keys(SERIES_OPTIONS).map((seg) => (
                 <button key={seg} onClick={() => { setSegmento(seg); setSerie(""); setDisciplina(""); }}
-                  style={{ ...chipStyle, background: segmento === seg ? "#97128b" : "white", color: segmento === seg ? "white" : "#3c2445", border: segmento === seg ? "2px solid #97128b" : "2px solid #dfd2e3" }}>
+                  style={{ ...chipStyle, background: segmento === seg ? "#97128b" : cores.card, color: segmento === seg ? "white" : "#3c2445", border: segmento === seg ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
                   {seg}
                 </button>
               ))}
@@ -456,7 +456,7 @@ ${renderMarkdown(resultado)}
                 <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
                   {SERIES_OPTIONS[segmento].map((s) => (
                     <button key={s} onClick={() => setSerie(s)}
-                      style={{ ...chipStyle, background: serie === s ? "#97128b" : "white", color: serie === s ? "white" : "#3c2445", border: serie === s ? "2px solid #97128b" : "2px solid #dfd2e3" }}>
+                      style={{ ...chipStyle, background: serie === s ? "#97128b" : cores.card, color: serie === s ? "white" : "#3c2445", border: serie === s ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
                       {s}
                     </button>
                   ))}
@@ -469,7 +469,7 @@ ${renderMarkdown(resultado)}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {DISCIPLINAS[segmento].map((d) => (
                     <button key={d} onClick={() => setDisciplina(d)}
-                      style={{ ...chipStyle, background: disciplina === d ? "#97128b" : "white", color: disciplina === d ? "white" : "#3c2445", border: disciplina === d ? "2px solid #97128b" : "2px solid #dfd2e3" }}>
+                      style={{ ...chipStyle, background: disciplina === d ? "#97128b" : cores.card, color: disciplina === d ? "white" : "#3c2445", border: disciplina === d ? "2px solid #97128b" : `2px solid ${cores.cardBorder}` }}>
                       {d}
                     </button>
                   ))}
@@ -497,7 +497,7 @@ ${renderMarkdown(resultado)}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {sugestoes.map((s) => (
                     <button key={s} onClick={() => setTema(s)}
-                      style={{ ...chipStyle, fontSize: 12, background: tema === s ? "#f7e9f6" : "white", border: tema === s ? "2px solid #97128b" : "2px solid #eadfec", color: "#3c2445" }}>
+                      style={{ ...chipStyle, fontSize: 12, background: tema === s ? cores.cardActiveBg : cores.card, border: tema === s ? "2px solid #97128b" : `2px solid ${cores.cardBorder}`, color: cores.text }}>
                       {s}
                     </button>
                   ))}
@@ -537,9 +537,9 @@ ${renderMarkdown(resultado)}
                     <div style={{
                       display: "flex", alignItems: "center", gap: 10,
                       padding: "10px 14px", borderRadius: ativo ? "10px 10px 0 0" : 10,
-                      background: ativo ? "#f7e9f6" : "white",
-                      border: ativo ? "2px solid #97128b" : "2px solid #eadfec",
-                      borderBottom: ativo ? "1px solid #e0c4de" : undefined,
+                      background: ativo ? cores.cardActiveBg : cores.card,
+                      border: ativo ? "2px solid #97128b" : `2px solid ${cores.cardBorder}`,
+                      borderBottom: ativo ? `1px solid ${dk ? "#4a3060" : "#e0c4de"}` : undefined,
                       transition: "all 0.15s",
                     }}>
                       <span style={{ fontSize: 20, cursor: "pointer" }} onClick={() => toggleTipo(t.id)}>{t.icon}</span>
@@ -551,8 +551,8 @@ ${renderMarkdown(resultado)}
                             onChange={(e) => setTiposOrdem((prev) => ({ ...prev, [t.id]: Number(e.target.value) || "" }))}
                             style={{
                               width: 50, padding: "3px 2px", borderRadius: 6,
-                              border: "1px solid #cfbfd4", fontSize: 12, fontWeight: 600,
-                              color: tiposOrdem[t.id] ? "#97128b" : "#aaa",
+                              border: `1px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`, fontSize: 12, fontWeight: 600,
+                              color: tiposOrdem[t.id] ? "#97128b" : (dk ? "#777" : "#aaa"),
                               background: cores.card, cursor: "pointer", textAlign: "center",
                             }}
                           >
@@ -563,7 +563,7 @@ ${renderMarkdown(resultado)}
                           </select>
                           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                           <button onClick={() => setQtd(t.id, tipos[t.id] - 1)} style={{
-                            width: 28, height: 28, borderRadius: 6, border: "1px solid #cfbfd4",
+                            width: 28, height: 28, borderRadius: 6, border: `1px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`,
                             background: cores.card, color: "#97128b", fontSize: 16, fontWeight: 700,
                             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                           }}>−</button>
@@ -571,7 +571,7 @@ ${renderMarkdown(resultado)}
                             width: 28, textAlign: "center", fontSize: 15, fontWeight: 700, color: "#97128b",
                           }}>{tipos[t.id]}</span>
                           <button onClick={() => setQtd(t.id, tipos[t.id] + 1)} style={{
-                            width: 28, height: 28, borderRadius: 6, border: "1px solid #cfbfd4",
+                            width: 28, height: 28, borderRadius: 6, border: `1px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`,
                             background: cores.card, color: "#97128b", fontSize: 16, fontWeight: 700,
                             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                           }}>+</button>
@@ -579,7 +579,7 @@ ${renderMarkdown(resultado)}
                         </div>
                       ) : (
                         <span onClick={() => toggleTipo(t.id)} style={{
-                          width: 22, height: 22, borderRadius: 6, border: "2px solid #cfbfd4",
+                          width: 22, height: 22, borderRadius: 6, border: `2px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`,
                           cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                         }} />
                       )}
@@ -597,9 +597,9 @@ ${renderMarkdown(resultado)}
                           }))} style={{
                             padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 500,
                             cursor: "pointer", transition: "all 0.15s",
-                            background: areaAtual === a.id ? "#97128b" : "white",
-                            color: areaAtual === a.id ? "white" : "#3c2445",
-                            border: areaAtual === a.id ? "1px solid #97128b" : "1px solid #dfd2e3",
+                            background: areaAtual === a.id ? "#97128b" : cores.card,
+                            color: areaAtual === a.id ? "white" : cores.text,
+                            border: areaAtual === a.id ? "1px solid #97128b" : `1px solid ${cores.cardBorder}`,
                           }}>
                             {a.label}
                           </button>
@@ -670,7 +670,7 @@ ${renderMarkdown(resultado)}
             {progressao && (
               <div style={{
                 display: "flex", gap: 8, padding: "10px 14px", marginTop: 4,
-                background: cores.areaSubBg, borderRadius: 10, border: "1px solid #eadfec",
+                background: cores.areaSubBg, borderRadius: 10, border: `1px solid ${cores.cardBorder}`,
                 flexWrap: "wrap", alignItems: "center",
               }}>
                 {[
@@ -686,7 +686,7 @@ ${renderMarkdown(resultado)}
                       onChange={(e) => setNiveis((prev) => ({ ...prev, [n.key]: Number(e.target.value) || 0 }))}
                       style={{
                         width: 42, padding: "4px 4px", borderRadius: 6,
-                        border: "1px solid #cfbfd4", textAlign: "center",
+                        border: `1px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`, textAlign: "center",
                         fontSize: 13, fontWeight: 700, color: n.color, background: cores.card,
                       }}
                     />
@@ -760,13 +760,13 @@ ${renderMarkdown(resultado)}
                   }} style={{
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "9px 14px", borderRadius: 10, cursor: "pointer",
-                    background: selecionado ? "#f7e9f6" : "white",
-                    border: selecionado ? "2px solid #97128b" : "2px solid #eadfec",
+                    background: selecionado ? cores.cardActiveBg : cores.card,
+                    border: selecionado ? "2px solid #97128b" : `2px solid ${cores.cardBorder}`,
                     fontSize: 13, color: cores.text, textAlign: "left", transition: "all 0.15s",
                   }}>
                     <span style={{
                       width: 20, height: 20, borderRadius: 5,
-                      border: selecionado ? "none" : "2px solid #cfbfd4",
+                      border: selecionado ? "none" : `2px solid ${dk ? "#4a4a6c" : "#cfbfd4"}`,
                       background: selecionado ? "#97128b" : "transparent",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       color: "white", fontSize: 13, fontWeight: 700, flexShrink: 0,
@@ -804,7 +804,7 @@ ${renderMarkdown(resultado)}
               </button>
             </div>
             {loading && (
-              <div style={{ textAlign: "center", marginTop: 20, padding: 20, background: cores.card, borderRadius: 12, border: "1px solid #eadfec" }}>
+              <div style={{ textAlign: "center", marginTop: 20, padding: 20, background: cores.card, borderRadius: 12, border: `1px solid ${cores.cardBorder}` }}>
                 <div style={{ fontSize: 32, marginBottom: 8, animation: "pulse 1.5s infinite" }}>🤖</div>
                 <div style={{ fontSize: 13, color: cores.textSub }}>
                   Criando atividade de <strong>{disciplina}</strong> sobre <strong>{tema}</strong> para o <strong>{serie}</strong>...
@@ -824,7 +824,7 @@ ${renderMarkdown(resultado)}
             </div>
             <div style={{
               background: cores.card, padding: "28px 24px", borderRadius: 12,
-              border: "1px solid #eadfec", fontSize: 14, lineHeight: 1.7,
+              border: `1px solid ${cores.cardBorder}`, fontSize: 14, lineHeight: 1.7, background: cores.card,
               color: cores.text, whiteSpace: "pre-wrap", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
             }}>
               <style>{activityStyles}</style>
