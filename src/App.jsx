@@ -142,6 +142,8 @@ export default function App() {
   const [necessidades, setNecessidades] = useState([]);
   const [outraNecessidade, setOutraNecessidade] = useState("");
   const [modoEscuro, setModoEscuro] = useState(false);
+  const [pagina, setPagina] = useState("dashboard");
+  const [sidebarAberta, setSidebarAberta] = useState(false);
 
   const toggleTipo = (id) => {
     setTipos((prev) => ({ ...prev, [id]: prev[id] > 0 ? 0 : 2 }));
@@ -374,52 +376,218 @@ ${renderMarkdown(resultado)}
   const nextBtnStyle = { display: "block", width: "100%", marginTop: 24, padding: "14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #ffd43b, #ffc928)", color: "#35133e", fontSize: 15, fontWeight: 800, cursor: "pointer", transition: "opacity 0.2s", boxShadow: "0 5px 14px rgba(255,201,40,0.24)" };
   const backBtnStyle = { display: "flex", alignItems: "center", padding: "12px 16px", borderRadius: 10, border: `2px solid ${cores.cardBorder}`, background: cores.card, color: dk ? "#c4a8d4" : "#7b2b78", fontSize: 14, fontWeight: 600, cursor: "pointer" };
 
+  const MENU = [
+    { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "gerador", label: "Gerar Atividade", icon: "✨" },
+    { id: "alunos", label: "Alunos", icon: "👩‍🎓" },
+    { id: "historico", label: "Histórico", icon: "📋" },
+  ];
+
+  const statCards = [
+    { label: "Alunos cadastrados", valor: "—", icon: "👩‍🎓", cor: "#97128b" },
+    { label: "Atividades criadas", valor: "—", icon: "📝", cor: "#e6a817" },
+    { label: "Professores", valor: "—", icon: "👨‍🏫", cor: "#2e7d32" },
+    { label: "Disciplinas ativas", valor: "—", icon: "📚", cor: "#1565c0" },
+  ];
+
   return (
     <div style={{
       fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
       background: cores.bg,
       minHeight: "100vh",
-      padding: "0",
+      display: "flex",
       transition: "background 0.3s",
     }}>
+
+      {/* Overlay mobile */}
+      {sidebarAberta && (
+        <div onClick={() => setSidebarAberta(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 90,
+        }} />
+      )}
+
+      {/* Sidebar */}
       <div style={{
-        background: dk
-          ? "linear-gradient(135deg, #1a0a2e 0%, #2e1045 52%, #3a1555 100%)"
-          : "linear-gradient(135deg, #4b0d63 0%, #7b126f 52%, #9b147f 100%)",
-        padding: "20px 24px",
-        color: "white",
-        display: "flex",
-        alignItems: "center",
-        gap: "14px",
-        boxShadow: dk ? "0 3px 16px rgba(0,0,0,0.5)" : "0 3px 16px rgba(75,13,99,0.28)",
+        width: 240, minHeight: "100vh", padding: "20px 12px",
+        background: dk ? "#12122a" : "#2e0a3e",
+        display: "flex", flexDirection: "column", gap: 6,
+        position: "fixed", left: sidebarAberta ? 0 : -260, top: 0, zIndex: 100,
+        transition: "left 0.3s",
+        boxShadow: sidebarAberta ? "4px 0 20px rgba(0,0,0,0.3)" : "none",
       }}>
-        <div style={{
-          width: 58, height: 58, borderRadius: 14,
-          background: "rgba(255,255,255,0.10)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          backdropFilter: "blur(4px)", padding: 5, flexShrink: 0,
-        }}>
-          <img src="/logo-genesis.png" alt="Logo do Colégio Gênesis Life" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-        </div>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.4px" }}>
-            Gênesis <span style={{ color: "#ffd43b" }}>Atividades</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", marginBottom: 16 }}>
+          <img src="/logo-genesis.png" alt="Logo" style={{ width: 40, height: 40, objectFit: "contain" }} />
+          <div>
+            <div style={{ color: "white", fontSize: 15, fontWeight: 800 }}>Gênesis</div>
+            <div style={{ color: "#ffd43b", fontSize: 11, fontWeight: 600 }}>Atividades</div>
           </div>
-          <div style={{ fontSize: 12, opacity: 0.88, marginTop: 2 }}>
-            Gerador de atividades adaptadas by Thiago
-          </div>
+          <button onClick={() => setSidebarAberta(false)} style={{
+            marginLeft: "auto", background: "none", border: "none", color: "white",
+            fontSize: 20, cursor: "pointer",
+          }}>✕</button>
         </div>
-        <button onClick={() => setModoEscuro(!modoEscuro)} style={{
-          marginLeft: "auto", background: "rgba(255,255,255,0.15)",
-          border: "none", borderRadius: 10, padding: "8px 12px",
-          cursor: "pointer", fontSize: 18, color: "white",
-          transition: "background 0.2s",
-        }}>
-          {dk ? "☀️" : "🌙"}
-        </button>
-        <style>{`@media (min-width: 640px) { .school-brand { display: block !important; } }`}</style>
+        {MENU.map((item) => (
+          <button key={item.id} onClick={() => { setPagina(item.id); setSidebarAberta(false); }}
+            style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: pagina === item.id ? "rgba(255,255,255,0.15)" : "transparent",
+              color: pagina === item.id ? "#ffd43b" : "rgba(255,255,255,0.7)",
+              fontSize: 14, fontWeight: pagina === item.id ? 700 : 500,
+              transition: "all 0.15s", textAlign: "left", width: "100%",
+            }}>
+            <span style={{ fontSize: 18 }}>{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+        <div style={{ marginTop: "auto", padding: "12px 14px" }}>
+          <button onClick={() => setModoEscuro(!modoEscuro)} style={{
+            display: "flex", alignItems: "center", gap: 8, width: "100%",
+            padding: "10px 12px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)",
+            fontSize: 13, transition: "all 0.15s",
+          }}>
+            {dk ? "☀️ Modo claro" : "🌙 Modo escuro"}
+          </button>
+        </div>
       </div>
 
+      {/* Main content */}
+      <div style={{ flex: 1, minHeight: "100vh" }}>
+
+        {/* Top bar */}
+        <div style={{
+          background: dk
+            ? "linear-gradient(135deg, #1a0a2e 0%, #2e1045 52%, #3a1555 100%)"
+            : "linear-gradient(135deg, #4b0d63 0%, #7b126f 52%, #9b147f 100%)",
+          padding: "16px 24px",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          gap: "14px",
+          boxShadow: dk ? "0 3px 16px rgba(0,0,0,0.5)" : "0 3px 16px rgba(75,13,99,0.28)",
+        }}>
+          <button onClick={() => setSidebarAberta(true)} style={{
+            background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8,
+            padding: "8px 10px", cursor: "pointer", color: "white", fontSize: 20,
+          }}>☰</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <img src="/logo-genesis.png" alt="Logo" style={{ width: 36, height: 36, objectFit: "contain" }} />
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 800 }}>
+                Gênesis <span style={{ color: "#ffd43b" }}>Atividades</span>
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.85 }}>Gerador de atividades adaptadas by Thiago</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dashboard */}
+        {pagina === "dashboard" && (
+          <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: cores.text, margin: "0 0 4px" }}>
+              Dashboard
+            </h2>
+            <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 24px" }}>
+              Visão geral do Colégio Gênesis Life
+            </p>
+
+            <div style={{
+              display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+              gap: 14, marginBottom: 28,
+            }}>
+              {statCards.map((card) => (
+                <div key={card.label} style={{
+                  background: cores.card, borderRadius: 14, padding: "20px 18px",
+                  border: `1px solid ${cores.cardBorder}`,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                }}>
+                  <div style={{ fontSize: 28, marginBottom: 6 }}>{card.icon}</div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: card.cor }}>{card.valor}</div>
+                  <div style={{ fontSize: 12, color: cores.textSub, marginTop: 4 }}>{card.label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              background: cores.card, borderRadius: 14, padding: "24px 20px",
+              border: `1px solid ${cores.cardBorder}`,
+            }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 12px" }}>
+                🚀 Comece agora
+              </h3>
+              <p style={{ fontSize: 14, color: cores.textSub, margin: "0 0 16px", lineHeight: 1.5 }}>
+                Comece gerando uma atividade adaptada para seus alunos!
+              </p>
+              <button onClick={() => setPagina("gerador")} style={{
+                ...nextBtnStyle, marginTop: 0, maxWidth: 280,
+              }}>
+                ✨ Gerar Atividade
+              </button>
+            </div>
+
+            <div style={{
+              background: cores.card, borderRadius: 14, padding: "24px 20px", marginTop: 14,
+              border: `1px solid ${cores.cardBorder}`,
+            }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 12px" }}>
+                📌 Em breve
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { icon: "👩‍🎓", title: "Cadastro de Alunos", desc: "Perfil com necessidades — atividades personalizadas automaticamente" },
+                ].map((item) => (
+                  <div key={item.title} style={{
+                    display: "flex", gap: 12, alignItems: "center",
+                    padding: "12px 14px", borderRadius: 10,
+                    background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}`,
+                  }}>
+                    <span style={{ fontSize: 24 }}>{item.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: cores.text }}>{item.title}</div>
+                      <div style={{ fontSize: 12, color: cores.textSub }}>{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Placeholder: Alunos */}
+        {pagina === "alunos" && (
+          <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: cores.text, margin: "0 0 4px" }}>👩‍🎓 Alunos</h2>
+            <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 24px" }}>Cadastro de alunos com necessidades — em breve.</p>
+            <div style={{
+              background: cores.card, borderRadius: 14, padding: "40px 20px",
+              border: `1px solid ${cores.cardBorder}`, textAlign: "center",
+            }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🏗️</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: cores.text }}>Em construção</div>
+              <div style={{ fontSize: 13, color: cores.textSub, marginTop: 4 }}>Essa funcionalidade será a próxima a ser implementada.</div>
+            </div>
+          </div>
+        )}
+
+        {/* Placeholder: Histórico */}
+        {pagina === "historico" && (
+          <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: cores.text, margin: "0 0 4px" }}>📋 Histórico</h2>
+            <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 24px" }}>Histórico de atividades geradas — em breve.</p>
+            <div style={{
+              background: cores.card, borderRadius: 14, padding: "40px 20px",
+              border: `1px solid ${cores.cardBorder}`, textAlign: "center",
+            }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🏗️</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: cores.text }}>Em construção</div>
+              <div style={{ fontSize: 13, color: cores.textSub, marginTop: 4 }}>Essa funcionalidade será implementada com o banco de dados.</div>
+            </div>
+          </div>
+        )}
+
+        {/* Gerador de Atividades */}
+        {pagina === "gerador" && (
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px 40px" }}>
         {step < 4 && (
           <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
@@ -844,6 +1012,8 @@ ${renderMarkdown(resultado)}
               🔄 Gerar outra versão (mesmo tema)
             </button>
           </div>
+        )}
+      </div>
         )}
       </div>
     </div>
