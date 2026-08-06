@@ -116,6 +116,14 @@ FORMATO DE SAÍDA (use Markdown simples):
 ${config.gabarito ? "---\n## 📋 Gabarito do Professor\n(respostas aqui)" : ""}
 
 Gere a atividade agora. Seja criativo e pedagógico.
+${config.alunoSelecionado ? `
+PERFIL DO ALUNO (adapte a atividade com base nessas informações):
+Nome: ${config.alunoSelecionado.nome}
+Série: ${config.alunoSelecionado.serie}
+${config.alunoSelecionado.necessidades && config.alunoSelecionado.necessidades.length > 0 ? `Necessidades: ${config.alunoSelecionado.necessidades.join(", ")}` : ""}
+${config.alunoSelecionado.observacoes ? `Observações do professor: ${config.alunoSelecionado.observacoes}` : ""}
+${config.alunoSelecionado.pei_resumo ? `PEI (Plano Educacional Individualizado):\n${config.alunoSelecionado.pei_resumo}` : ""}
+Use TODAS essas informações para personalizar a atividade. Adapte linguagem, complexidade, tipos de apoio e formato às necessidades deste aluno.` : ""}
 ${config.letraMaiuscula ? "IMPORTANTE: Escreva TODA a atividade em LETRAS MAIÚSCULAS." : ""}
 ${config.negrito ? "IMPORTANTE: Escreva TODA a atividade em **negrito** — enunciados, alternativas, textos, frases para completar, tudo." : ""}`;
 }
@@ -155,6 +163,7 @@ export default function App() {
   const [alunoNecessidadeOutra, setAlunoNecessidadeOutra] = useState("");
   const [alunoBusca, setAlunoBusca] = useState("");
   const [alunoMsg, setAlunoMsg] = useState("");
+  const [alunoSelecionado, setAlunoSelecionado] = useState(null);
 
   const NECESSIDADES_OPCOES = [
     "Dificuldade de leitura",
@@ -250,7 +259,7 @@ export default function App() {
     setLoading(true);
     setResultado("");
     try {
-      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, tiposOrdem, progressao, niveis, necessidades, outraNecessidade, letraMaiuscula, negrito });
+      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, tiposOrdem, progressao, niveis, necessidades, outraNecessidade, letraMaiuscula, negrito, alunoSelecionado });
 
       // Chama a serverless function /api/gerar (a chave fica segura no servidor)
       const response = await fetch("/api/gerar", {
@@ -293,6 +302,7 @@ export default function App() {
     setNegrito(false);
     setNecessidades([]);
     setOutraNecessidade("");
+    setAlunoSelecionado(null);
   };
 
   const sugestoes = TEMAS_SUGERIDOS[disciplina] || [];
@@ -833,6 +843,86 @@ ${renderMarkdown(resultado)}
 
         {step === 1 && (
           <div>
+            {/* Seletor de aluno */}
+            <div style={{
+              background: cores.card, borderRadius: 12, padding: "14px 16px",
+              border: `1px solid ${cores.cardBorder}`, marginBottom: 20,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: alunoSelecionado ? 0 : 10 }}>
+                <label style={{ ...labelStyle, margin: 0 }}>👩‍🎓 Aluno (opcional)</label>
+                {alunoSelecionado && (
+                  <button onClick={() => setAlunoSelecionado(null)} style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: 12, color: cores.textSub,
+                  }}>✕ Remover</button>
+                )}
+              </div>
+              {alunoSelecionado ? (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 10, marginTop: 10,
+                  padding: "10px 12px", borderRadius: 8,
+                  background: cores.cardActiveBg, border: "1px solid #97128b",
+                }}>
+                  <span style={{ fontSize: 22 }}>👩‍🎓</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: cores.text }}>{alunoSelecionado.nome}</div>
+                    <div style={{ fontSize: 11, color: cores.textSub }}>
+                      {alunoSelecionado.serie}{alunoSelecionado.turma ? ` — Turma ${alunoSelecionado.turma}` : ""}
+                    </div>
+                    {alunoSelecionado.necessidades && alunoSelecionado.necessidades.length > 0 && (
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                        {alunoSelecionado.necessidades.map((n) => (
+                          <span key={n} style={{
+                            fontSize: 9, padding: "2px 6px", borderRadius: 4,
+                            background: dk ? "#4a2060" : "#f3e5f5", color: dk ? "#d4a8e8" : "#7b1fa2",
+                            fontWeight: 600,
+                          }}>{n}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 18, color: "#2e7d32" }}>✓</span>
+                </div>
+              ) : (
+                <>
+                  {alunos.length === 0 ? (
+                    <div style={{ fontSize: 12, color: cores.textSub, padding: "8px 0" }}>
+                      Nenhum aluno cadastrado. <span onClick={() => setPagina("alunos")} style={{ color: "#97128b", cursor: "pointer", fontWeight: 600 }}>Cadastrar →</span>
+                    </div>
+                  ) : (
+                    <div style={{ maxHeight: 180, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+                      {alunos.map((aluno) => (
+                        <button key={aluno.id} onClick={() => {
+                          setAlunoSelecionado(aluno);
+                          if (aluno.serie) {
+                            const seg = Object.entries(SERIES_OPTIONS).find(([, series]) => series.includes(aluno.serie));
+                            if (seg) { setSegmento(seg[0]); setSerie(aluno.serie); }
+                          }
+                          if (aluno.necessidades && aluno.necessidades.length > 0) {
+                            setNecessidades(aluno.necessidades);
+                          }
+                        }} style={{
+                          display: "flex", alignItems: "center", gap: 8,
+                          padding: "8px 10px", borderRadius: 8, border: `1px solid ${cores.cardBorder}`,
+                          background: cores.card, cursor: "pointer", textAlign: "left",
+                          transition: "all 0.15s", width: "100%",
+                        }}>
+                          <span style={{ fontSize: 14 }}>👩‍🎓</span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: cores.text }}>{aluno.nome}</div>
+                            <div style={{ fontSize: 11, color: cores.textSub }}>{aluno.serie}{aluno.turma ? ` — ${aluno.turma}` : ""}</div>
+                          </div>
+                          {aluno.necessidades && aluno.necessidades.length > 0 && (
+                            <span style={{ fontSize: 10, color: "#97128b", fontWeight: 600 }}>{aluno.necessidades.length} nec.</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
             <h2 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
               Série e Disciplina
             </h2>
