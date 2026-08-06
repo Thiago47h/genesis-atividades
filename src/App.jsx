@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "./supabase.js";
 
 const SERIES_OPTIONS = {
   "Educação Infantil": ["Infantil I", "Infantil II", "Infantil III"],
@@ -144,6 +145,90 @@ export default function App() {
   const [modoEscuro, setModoEscuro] = useState(false);
   const [pagina, setPagina] = useState("dashboard");
   const [sidebarAberta, setSidebarAberta] = useState(false);
+
+  // Supabase - Alunos
+  const [alunos, setAlunos] = useState([]);
+  const [totalAlunos, setTotalAlunos] = useState(0);
+  const [totalAtividades, setTotalAtividades] = useState(0);
+  const [alunoForm, setAlunoForm] = useState({ nome: "", serie: "", turma: "", numero: "", necessidades: [], observacoes: "" });
+  const [alunoEditando, setAlunoEditando] = useState(null);
+  const [alunoNecessidadeOutra, setAlunoNecessidadeOutra] = useState("");
+  const [alunoBusca, setAlunoBusca] = useState("");
+  const [alunoMsg, setAlunoMsg] = useState("");
+
+  const NECESSIDADES_OPCOES = [
+    "Dificuldade de leitura",
+    "TDAH",
+    "TEA",
+    "Deficiência intelectual",
+    "Alfabetização em processo",
+    "Comandos mais curtos",
+  ];
+
+  const carregarAlunos = async () => {
+    const { data } = await supabase.from("alunos").select("*").order("nome");
+    if (data) {
+      setAlunos(data);
+      setTotalAlunos(data.length);
+    }
+  };
+
+  const salvarAluno = async () => {
+    if (!alunoForm.nome.trim() || !alunoForm.serie.trim()) {
+      setAlunoMsg("Preencha nome e série.");
+      return;
+    }
+    const payload = {
+      ...alunoForm,
+      numero: alunoForm.numero ? Number(alunoForm.numero) : null,
+    };
+    if (alunoEditando) {
+      await supabase.from("alunos").update(payload).eq("id", alunoEditando);
+      setAlunoEditando(null);
+      setAlunoMsg("✅ Aluno atualizado!");
+    } else {
+      await supabase.from("alunos").insert(payload);
+      setAlunoMsg("✅ Aluno cadastrado!");
+    }
+    setAlunoForm({ nome: "", serie: "", turma: "", numero: "", necessidades: [], observacoes: "" });
+    setAlunoNecessidadeOutra("");
+    carregarAlunos();
+    setTimeout(() => setAlunoMsg(""), 3000);
+  };
+
+  const editarAluno = (aluno) => {
+    setAlunoForm({
+      nome: aluno.nome,
+      serie: aluno.serie,
+      turma: aluno.turma || "",
+      numero: aluno.numero || "",
+      necessidades: aluno.necessidades || [],
+      observacoes: aluno.observacoes || "",
+    });
+    setAlunoEditando(aluno.id);
+  };
+
+  const excluirAluno = async (id) => {
+    if (confirm("Tem certeza que deseja excluir este aluno?")) {
+      await supabase.from("alunos").delete().eq("id", id);
+      carregarAlunos();
+      setAlunoMsg("🗑️ Aluno excluído.");
+      setTimeout(() => setAlunoMsg(""), 3000);
+    }
+  };
+
+  const toggleAlunoNecessidade = (nec) => {
+    setAlunoForm((prev) => ({
+      ...prev,
+      necessidades: prev.necessidades.includes(nec)
+        ? prev.necessidades.filter((n) => n !== nec)
+        : [...prev.necessidades, nec],
+    }));
+  };
+
+  useEffect(() => {
+    carregarAlunos();
+  }, []);
 
   const toggleTipo = (id) => {
     setTipos((prev) => ({ ...prev, [id]: prev[id] > 0 ? 0 : 2 }));
@@ -384,8 +469,8 @@ ${renderMarkdown(resultado)}
   ];
 
   const statCards = [
-    { label: "Alunos cadastrados", valor: "—", icon: "👩‍🎓", cor: "#97128b" },
-    { label: "Atividades criadas", valor: "—", icon: "📝", cor: "#e6a817" },
+    { label: "Alunos cadastrados", valor: totalAlunos, icon: "👩‍🎓", cor: "#97128b" },
+    { label: "Atividades criadas", valor: totalAtividades, icon: "📝", cor: "#e6a817" },
   ];
 
   return (
@@ -556,14 +641,161 @@ ${renderMarkdown(resultado)}
         {pagina === "alunos" && (
           <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
             <h2 style={{ fontSize: 20, fontWeight: 800, color: cores.text, margin: "0 0 4px" }}>👩‍🎓 Alunos</h2>
-            <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 24px" }}>Cadastro de alunos com necessidades — em breve.</p>
-            <div style={{
-              background: cores.card, borderRadius: 14, padding: "40px 20px",
-              border: `1px solid ${cores.cardBorder}`, textAlign: "center",
-            }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🏗️</div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: cores.text }}>Em construção</div>
-              <div style={{ fontSize: 13, color: cores.textSub, marginTop: 4 }}>Essa funcionalidade será a próxima a ser implementada.</div>
+            <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 20px" }}>Cadastre alunos com suas necessidades para gerar atividades personalizadas.</p>
+
+            {alunoMsg && (
+              <div style={{ padding: "10px 14px", borderRadius: 10, background: dk ? "#1a3a2e" : "#e8f5e9", color: dk ? "#81c784" : "#2e7d32", fontSize: 13, fontWeight: 600, marginBottom: 16 }}>
+                {alunoMsg}
+              </div>
+            )}
+
+            {/* Formulário */}
+            <div style={{ background: cores.card, borderRadius: 14, padding: "20px", border: `1px solid ${cores.cardBorder}`, marginBottom: 20 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: cores.text, margin: "0 0 16px" }}>
+                {alunoEditando ? "✏️ Editar aluno" : "➕ Cadastrar aluno"}
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                <div>
+                  <label style={labelStyle}>Nome</label>
+                  <input type="text" placeholder="Nome completo" value={alunoForm.nome} onChange={(e) => setAlunoForm({ ...alunoForm, nome: e.target.value })} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Série</label>
+                  <select value={alunoForm.serie} onChange={(e) => setAlunoForm({ ...alunoForm, serie: e.target.value })}
+                    style={{ ...inputStyle, cursor: "pointer" }}>
+                    <option value="">Selecione</option>
+                    {Object.values(SERIES_OPTIONS).flat().map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Turma</label>
+                  <input type="text" placeholder="Ex: A, B" value={alunoForm.turma} onChange={(e) => setAlunoForm({ ...alunoForm, turma: e.target.value })} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Número</label>
+                  <input type="number" placeholder="Nº" value={alunoForm.numero} onChange={(e) => setAlunoForm({ ...alunoForm, numero: e.target.value })} style={inputStyle} />
+                </div>
+              </div>
+
+              <label style={labelStyle}>Necessidades do aluno</label>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                {NECESSIDADES_OPCOES.map((nec) => {
+                  const sel = alunoForm.necessidades.includes(nec);
+                  return (
+                    <button key={nec} onClick={() => toggleAlunoNecessidade(nec)} style={{
+                      ...chipStyle, fontSize: 11, padding: "6px 10px",
+                      background: sel ? "#97128b" : cores.card,
+                      color: sel ? "white" : cores.text,
+                      border: sel ? "1px solid #97128b" : `1px solid ${cores.cardBorder}`,
+                    }}>{nec}</button>
+                  );
+                })}
+                <button onClick={() => {
+                  if (alunoNecessidadeOutra.trim()) {
+                    toggleAlunoNecessidade(alunoNecessidadeOutra.trim());
+                    setAlunoNecessidadeOutra("");
+                  }
+                }} style={{
+                  ...chipStyle, fontSize: 11, padding: "6px 10px",
+                  background: cores.card, color: cores.text,
+                  border: `1px solid ${cores.cardBorder}`,
+                }}>+ Outro</button>
+              </div>
+              {alunoForm.necessidades.filter((n) => !NECESSIDADES_OPCOES.includes(n)).length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                  {alunoForm.necessidades.filter((n) => !NECESSIDADES_OPCOES.includes(n)).map((n) => (
+                    <span key={n} onClick={() => toggleAlunoNecessidade(n)} style={{
+                      ...chipStyle, fontSize: 11, padding: "6px 10px", cursor: "pointer",
+                      background: "#97128b", color: "white", border: "1px solid #97128b",
+                    }}>{n} ✕</span>
+                  ))}
+                </div>
+              )}
+              <input type="text" placeholder="Digite uma necessidade personalizada e clique '+ Outro'" value={alunoNecessidadeOutra} onChange={(e) => setAlunoNecessidadeOutra(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && alunoNecessidadeOutra.trim()) {
+                    toggleAlunoNecessidade(alunoNecessidadeOutra.trim());
+                    setAlunoNecessidadeOutra("");
+                  }
+                }}
+                style={{ ...inputStyle, marginBottom: 12, fontSize: 12 }} />
+
+              <label style={labelStyle}>Observações</label>
+              <textarea placeholder="Ex: Aprende melhor com imagens, precisa de mais tempo..." value={alunoForm.observacoes} onChange={(e) => setAlunoForm({ ...alunoForm, observacoes: e.target.value })}
+                style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} />
+
+              <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                <button onClick={salvarAluno} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>
+                  {alunoEditando ? "💾 Salvar alterações" : "➕ Cadastrar aluno"}
+                </button>
+                {alunoEditando && (
+                  <button onClick={() => {
+                    setAlunoEditando(null);
+                    setAlunoForm({ nome: "", serie: "", turma: "", numero: "", necessidades: [], observacoes: "" });
+                  }} style={backBtnStyle}>Cancelar</button>
+                )}
+              </div>
+            </div>
+
+            {/* Lista de alunos */}
+            <div style={{ background: cores.card, borderRadius: 14, padding: "20px", border: `1px solid ${cores.cardBorder}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: cores.text, margin: 0, flex: 1 }}>
+                  📋 Alunos cadastrados ({alunos.length})
+                </h3>
+                <input type="text" placeholder="🔍 Buscar..." value={alunoBusca} onChange={(e) => setAlunoBusca(e.target.value)}
+                  style={{ ...inputStyle, width: 180, fontSize: 12, padding: "8px 12px" }} />
+              </div>
+
+              {alunos.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "30px 0", color: cores.textSub }}>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>
+                  <div style={{ fontSize: 14 }}>Nenhum aluno cadastrado ainda.</div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {alunos
+                    .filter((a) => a.nome.toLowerCase().includes(alunoBusca.toLowerCase()) || (a.serie || "").toLowerCase().includes(alunoBusca.toLowerCase()) || (a.turma || "").toLowerCase().includes(alunoBusca.toLowerCase()))
+                    .map((aluno) => (
+                    <div key={aluno.id} style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "12px 14px", borderRadius: 10,
+                      background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}`,
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: cores.text }}>{aluno.nome}</div>
+                        <div style={{ fontSize: 12, color: cores.textSub }}>
+                          {aluno.serie}{aluno.turma ? ` — Turma ${aluno.turma}` : ""}{aluno.numero ? ` — Nº ${aluno.numero}` : ""}
+                        </div>
+                        {aluno.necessidades && aluno.necessidades.length > 0 && (
+                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                            {aluno.necessidades.map((n) => (
+                              <span key={n} style={{
+                                fontSize: 10, padding: "2px 6px", borderRadius: 4,
+                                background: dk ? "#4a2060" : "#f3e5f5", color: dk ? "#d4a8e8" : "#7b1fa2",
+                                fontWeight: 600,
+                              }}>{n}</span>
+                            ))}
+                          </div>
+                        )}
+                        {aluno.observacoes && (
+                          <div style={{ fontSize: 11, color: cores.textSub, marginTop: 4, fontStyle: "italic" }}>
+                            {aluno.observacoes}
+                          </div>
+                        )}
+                      </div>
+                      <button onClick={() => editarAluno(aluno)} style={{
+                        background: "none", border: "none", cursor: "pointer", fontSize: 18, padding: 4,
+                      }}>✏️</button>
+                      <button onClick={() => excluirAluno(aluno.id)} style={{
+                        background: "none", border: "none", cursor: "pointer", fontSize: 18, padding: 4,
+                      }}>🗑️</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
