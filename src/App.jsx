@@ -386,8 +386,6 @@ ${renderMarkdown(resultado)}
   const statCards = [
     { label: "Alunos cadastrados", valor: "—", icon: "👩‍🎓", cor: "#97128b" },
     { label: "Atividades criadas", valor: "—", icon: "📝", cor: "#e6a817" },
-    { label: "Professores", valor: "—", icon: "👨‍🏫", cor: "#2e7d32" },
-    { label: "Disciplinas ativas", valor: "—", icon: "📚", cor: "#1565c0" },
   ];
 
   return (
