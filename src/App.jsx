@@ -1258,7 +1258,7 @@ ${renderMarkdown(resultado)}
             </div>
             <div style={{
               background: cores.card, padding: "28px 24px", borderRadius: 12,
-              border: `1px solid ${cores.cardBorder}`, fontSize: 14, lineHeight: 1.7, background: cores.card,
+              border: `1px solid ${cores.cardBorder}`, fontSize: 14, lineHeight: 1.7,
               color: cores.text, whiteSpace: "pre-wrap", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
             }}>
               <style>{activityStyles}</style>
@@ -1280,8 +1280,7 @@ ${renderMarkdown(resultado)}
           </div>
         )}
       </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
