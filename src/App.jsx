@@ -1083,7 +1083,7 @@ ${renderMarkdown(resultado)}
                             style={{
                               width: 50, padding: "3px 2px", borderRadius: 6,
                               border: `1px solid ${dk ? "#4a4a6c" : "#C7BFAE"}`, fontSize: 12, fontWeight: 600,
-                              color: tiposOrdem[t.id] ? "#1F3A3D" : (dk ? "#777" : "#aaa"),
+                              color: tiposOrdem[t.id] ? (dk ? "#7BA896" : "#1F3A3D") : (dk ? "#777" : "#aaa"),
                               background: cores.card, cursor: "pointer", textAlign: "center",
                             }}
                           >
@@ -1095,15 +1095,15 @@ ${renderMarkdown(resultado)}
                           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                           <button onClick={() => setQtd(t.id, tipos[t.id] - 1)} style={{
                             width: 28, height: 28, borderRadius: 6, border: `1px solid ${dk ? "#4a4a6c" : "#C7BFAE"}`,
-                            background: cores.card, color: "#1F3A3D", fontSize: 16, fontWeight: 700,
+                            background: cores.card, color: dk ? "#7BA896" : "#1F3A3D", fontSize: 16, fontWeight: 700,
                             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                           }}>−</button>
                           <span style={{
-                            width: 28, textAlign: "center", fontSize: 15, fontWeight: 700, color: "#1F3A3D",
+                            width: 28, textAlign: "center", fontSize: 15, fontWeight: 700, color: dk ? "#7BA896" : "#1F3A3D",
                           }}>{tipos[t.id]}</span>
                           <button onClick={() => setQtd(t.id, tipos[t.id] + 1)} style={{
                             width: 28, height: 28, borderRadius: 6, border: `1px solid ${dk ? "#4a4a6c" : "#C7BFAE"}`,
-                            background: cores.card, color: "#1F3A3D", fontSize: 16, fontWeight: 700,
+                            background: cores.card, color: dk ? "#7BA896" : "#1F3A3D", fontSize: 16, fontWeight: 700,
                             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                           }}>+</button>
                           </div>
