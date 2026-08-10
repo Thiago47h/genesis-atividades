@@ -182,6 +182,19 @@ export default function App() {
     }
   };
 
+  const [atividadesSalvas, setAtividadesSalvas] = useState([]);
+  const [filtroDisc, setFiltroDisc] = useState("");
+  const [filtroSerie, setFiltroSerie] = useState("");
+  const [filtroBuscaAtiv, setFiltroBuscaAtiv] = useState("");
+
+  const carregarAtividades = async () => {
+    const { data } = await supabase.from("atividades").select("*").order("criado_em", { ascending: false });
+    if (data) {
+      setAtividadesSalvas(data);
+      setTotalAtividades(data.length);
+    }
+  };
+
   const salvarAluno = async () => {
     if (!alunoForm.nome.trim() || !alunoForm.serie.trim()) {
       setAlunoMsg("Preencha nome e série.");
@@ -237,6 +250,7 @@ export default function App() {
 
   useEffect(() => {
     carregarAlunos();
+    carregarAtividades();
   }, []);
 
   const toggleTipo = (id) => {
@@ -276,6 +290,18 @@ export default function App() {
 
       setResultado(data.text);
       setStep(4);
+
+      // Salvar atividade no banco
+      await supabase.from("atividades").insert({
+        aluno_id: alunoSelecionado?.id || null,
+        aluno_nome: alunoSelecionado?.nome || null,
+        disciplina,
+        serie,
+        tema,
+        tipos_questao: tipos,
+        conteudo: data.text,
+      });
+      carregarAtividades();
     } catch (e) {
       setError("Erro na geração. Tente novamente.");
     } finally {
@@ -542,7 +568,7 @@ ${renderMarkdown(resultado)}
           <div style={{ maxWidth: 1120, margin: "0 auto", padding: "48px 32px" }}>
             <div style={{ marginBottom: 44 }}>
               <h1 style={{ fontSize: 42, fontWeight: 600, letterSpacing: "-0.01em", margin: "0 0 10px", lineHeight: 1.1, color: cores.text }}>
-                Bom dia, Thiago.
+                Bem-vindo!
               </h1>
               <p style={{ margin: 0, color: "#79726A", fontSize: 16 }}>Visão geral do Colégio Gênesis Life</p>
             </div>
@@ -760,15 +786,96 @@ ${renderMarkdown(resultado)}
         {pagina === "historico" && (
           <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
             <h2 style={{ fontSize: 20, fontWeight: 800, color: cores.text, margin: "0 0 4px" }}>📋 Histórico</h2>
-            <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 24px" }}>Histórico de atividades geradas — em breve.</p>
-            <div style={{
-              background: cores.card, borderRadius: 14, padding: "40px 20px",
-              border: `1px solid ${cores.cardBorder}`, textAlign: "center",
-            }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🏗️</div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: cores.text }}>Em construção</div>
-              <div style={{ fontSize: 13, color: cores.textSub, marginTop: 4 }}>Essa funcionalidade será implementada com o banco de dados.</div>
+            <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 20px" }}>Todas as atividades geradas ({atividadesSalvas.length})</p>
+
+            {/* Filtros */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+              <input type="text" placeholder="🔍 Buscar por tema ou aluno..." value={filtroBuscaAtiv} onChange={(e) => setFiltroBuscaAtiv(e.target.value)}
+                style={{ ...inputStyle, flex: 1, minWidth: 180, fontSize: 12, padding: "8px 12px" }} />
+              <select value={filtroDisc} onChange={(e) => setFiltroDisc(e.target.value)}
+                style={{ ...inputStyle, width: 140, fontSize: 12, padding: "8px 12px", cursor: "pointer" }}>
+                <option value="">Disciplina</option>
+                {[...new Set(atividadesSalvas.map((a) => a.disciplina))].map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <select value={filtroSerie} onChange={(e) => setFiltroSerie(e.target.value)}
+                style={{ ...inputStyle, width: 120, fontSize: 12, padding: "8px 12px", cursor: "pointer" }}>
+                <option value="">Série</option>
+                {[...new Set(atividadesSalvas.map((a) => a.serie))].map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
+
+            {atividadesSalvas.length === 0 ? (
+              <div style={{
+                background: cores.card, borderRadius: 14, padding: "40px 20px",
+                border: `1px solid ${cores.cardBorder}`, textAlign: "center",
+              }}>
+                <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>
+                <div style={{ fontSize: 14, color: cores.textSub }}>Nenhuma atividade gerada ainda.</div>
+                <button onClick={() => setPagina("gerador")} style={{ ...nextBtnStyle, maxWidth: 220, margin: "16px auto 0" }}>
+                  Gerar primeira atividade
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {atividadesSalvas
+                  .filter((a) => !filtroDisc || a.disciplina === filtroDisc)
+                  .filter((a) => !filtroSerie || a.serie === filtroSerie)
+                  .filter((a) => !filtroBuscaAtiv || (a.tema || "").toLowerCase().includes(filtroBuscaAtiv.toLowerCase()) || (a.aluno_nome || "").toLowerCase().includes(filtroBuscaAtiv.toLowerCase()))
+                  .map((ativ) => (
+                  <div key={ativ.id} style={{
+                    background: cores.card, borderRadius: 12, padding: "16px 18px",
+                    border: `1px solid ${cores.cardBorder}`,
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: cores.text }}>{ativ.tema}</div>
+                        <div style={{ fontSize: 12, color: cores.textSub }}>
+                          {ativ.disciplina} — {ativ.serie}
+                          {ativ.aluno_nome ? ` — ${ativ.aluno_nome}` : ""}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, color: cores.textSub }}>
+                        {new Date(ativ.criado_em).toLocaleDateString("pt-BR")}
+                      </div>
+                    </div>
+                    <div style={{
+                      fontSize: 12, color: cores.textSub, lineHeight: 1.5,
+                      maxHeight: 60, overflow: "hidden",
+                      marginBottom: 12,
+                    }}>
+                      {ativ.conteudo?.substring(0, 200)}...
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => {
+                        setResultado(ativ.conteudo);
+                        setDisciplina(ativ.disciplina);
+                        setSerie(ativ.serie);
+                        setTema(ativ.tema);
+                        setStep(4);
+                        setPagina("gerador");
+                      }} style={{
+                        padding: "6px 14px", borderRadius: 8, border: `1px solid ${cores.cardBorder}`,
+                        background: cores.card, color: cores.text, fontSize: 12, fontWeight: 600,
+                        cursor: "pointer",
+                      }}>👁️ Ver</button>
+                      <button onClick={async () => {
+                        await supabase.from("atividades").delete().eq("id", ativ.id);
+                        carregarAtividades();
+                      }} style={{
+                        padding: "6px 14px", borderRadius: 8, border: `1px solid ${cores.cardBorder}`,
+                        background: cores.card, color: "#c0392b", fontSize: 12, fontWeight: 600,
+                        cursor: "pointer",
+                      }}>🗑️</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
