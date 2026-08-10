@@ -605,16 +605,6 @@ ${renderMarkdown(resultado)}
                   Gerar atividade →
                 </button>
               </div>
-              <div style={{ padding: 44, borderLeft: "1px solid rgba(255,255,255,0.14)" }}>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".06em", color: "#B9C9C6", textTransform: "uppercase", marginBottom: 16 }}>Em breve</div>
-                {[
-                  "Biblioteca de atividades compartilhada",
-                  "Relatório de progresso por aluno",
-                  "Modelos alinhados à BNCC",
-                ].map((item) => (
-                  <div key={item} style={{ fontSize: 14, color: "#E4EEEC", lineHeight: 1.5, marginBottom: 14, paddingLeft: 16, borderLeft: "2px solid #C1683C" }}>{item}</div>
-                ))}
-              </div>
             </div>
           </div>
         )}
