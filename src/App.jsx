@@ -287,9 +287,11 @@ export default function App() {
   };
 
   useEffect(() => {
-    carregarAlunos();
-    carregarAtividades();
-  }, []);
+    if (usuario) {
+      carregarAlunos();
+      carregarAtividades();
+    }
+  }, [usuario]);
 
   const toggleTipo = (id) => {
     setTipos((prev) => ({ ...prev, [id]: prev[id] > 0 ? 0 : 2 }));
