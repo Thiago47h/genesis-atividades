@@ -129,6 +129,44 @@ ${config.negrito ? "IMPORTANTE: Escreva TODA a atividade em **negrito** — enun
 }
 
 export default function App() {
+  // Autenticação
+  const [usuario, setUsuario] = useState(null);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginSenha, setLoginSenha] = useState("");
+  const [loginErro, setLoginErro] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [verificandoAuth, setVerificandoAuth] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUsuario(session?.user || null);
+      setVerificandoAuth(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUsuario(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fazerLogin = async () => {
+    setLoginErro("");
+    setLoginLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginSenha,
+    });
+    if (error) {
+      setLoginErro("Email ou senha incorretos.");
+    }
+    setLoginLoading(false);
+  };
+
+  const fazerLogout = async () => {
+    await supabase.auth.signOut();
+    setUsuario(null);
+  };
+
+  // Estados do app
   const [step, setStep] = useState(1);
   const [segmento, setSegmento] = useState("");
   const [serie, setSerie] = useState("");
@@ -504,6 +542,105 @@ ${renderMarkdown(resultado)}
     { id: "historico", label: "Histórico", icon: "📋" },
   ];
 
+  // Tela de carregamento
+  if (verificandoAuth) {
+    return (
+      <div style={{
+        fontFamily: "'Work Sans', system-ui, sans-serif",
+        background: "#FAF7F1", minHeight: "100vh",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <img src="/logo-genesis.png" alt="Logo" style={{ width: 60, marginBottom: 16 }} />
+          <div style={{ fontSize: 14, color: "#8A8378" }}>Carregando...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Tela de login
+  if (!usuario) {
+    return (
+      <div style={{
+        fontFamily: "'Work Sans', system-ui, sans-serif",
+        background: "#FAF7F1", minHeight: "100vh",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 20,
+      }}>
+        <div style={{
+          background: "#fff", borderRadius: 16, padding: "40px 36px",
+          boxShadow: "0 4px 24px rgba(34,32,29,0.08)",
+          width: "100%", maxWidth: 380,
+        }}>
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <img src="/logo-genesis.png" alt="Logo" style={{ width: 64, marginBottom: 12 }} />
+            <div style={{ fontSize: 22, fontWeight: 600, color: "#22201D" }}>Gênesis Atividades</div>
+            <div style={{ fontSize: 13, color: "#8A8378", marginTop: 4 }}>Faça login para continuar</div>
+          </div>
+
+          {loginErro && (
+            <div style={{
+              padding: "10px 14px", borderRadius: 10, marginBottom: 16,
+              background: "#FEF2F2", color: "#991B1B", fontSize: 13, fontWeight: 500,
+            }}>
+              {loginErro}
+            </div>
+          )}
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#8A8378", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>Email</label>
+            <input
+              type="email"
+              placeholder="seu@email.com"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && fazerLogin()}
+              style={{
+                width: "100%", padding: "12px 14px", borderRadius: 10,
+                border: "2px solid #E2DACB", fontSize: 14, color: "#22201D",
+                outline: "none", boxSizing: "border-box", background: "#fff",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#8A8378", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>Senha</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={loginSenha}
+              onChange={(e) => setLoginSenha(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && fazerLogin()}
+              style={{
+                width: "100%", padding: "12px 14px", borderRadius: 10,
+                border: "2px solid #E2DACB", fontSize: 14, color: "#22201D",
+                outline: "none", boxSizing: "border-box", background: "#fff",
+              }}
+            />
+          </div>
+
+          <button
+            onClick={fazerLogin}
+            disabled={loginLoading}
+            style={{
+              width: "100%", padding: "14px", borderRadius: 10, border: "none",
+              background: "#C1683C", color: "#FAF3EA", fontSize: 15, fontWeight: 700,
+              cursor: loginLoading ? "wait" : "pointer",
+              opacity: loginLoading ? 0.7 : 1,
+              boxShadow: "0 4px 12px rgba(193,104,60,0.24)",
+            }}
+          >
+            {loginLoading ? "Entrando..." : "Entrar"}
+          </button>
+
+          <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: "#B5AFA5" }}>
+            Colégio Gênesis Life — Osasco/SP
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const statCards = [
     { label: "Alunos cadastrados", valor: totalAlunos, icon: "👩‍🎓", cor: "#1F3A3D" },
     { label: "Atividades criadas", valor: totalAtividades, icon: "📝", cor: "#e6a817" },
@@ -552,13 +689,20 @@ ${renderMarkdown(resultado)}
         </nav>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 13, color: "#8A8378" }}>Colégio Gênesis Life</span>
+          <span style={{ fontSize: 13, color: "#8A8378" }}>{usuario?.email}</span>
           <button onClick={() => setModoEscuro(!modoEscuro)} style={{
             background: "none", border: `1px solid ${cores.cardBorder}`,
             borderRadius: 8, padding: "6px 10px", cursor: "pointer",
             fontSize: 16, color: cores.text,
           }}>
             {dk ? "☀️" : "🌙"}
+          </button>
+          <button onClick={fazerLogout} style={{
+            background: "none", border: `1px solid ${cores.cardBorder}`,
+            borderRadius: 8, padding: "6px 10px", cursor: "pointer",
+            fontSize: 12, color: "#C1683C", fontWeight: 600,
+          }}>
+            Sair
           </button>
         </div>
       </header>
@@ -1349,14 +1493,14 @@ ${renderMarkdown(resultado)}
         {step === 4 && resultado && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-              <span style={{ background: cores.cardActiveBg, color: "#1F3A3D", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{serie}</span>
-              <span style={{ background: "#f0e8f8", color: "#5b2580", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{disciplina}</span>
-              <span style={{ background: "#fff7d6", color: "#7a5700", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{tema}</span>
+              <span style={{ background: dk ? "#2E3530" : "#E1EDE9", color: dk ? "#7BA896" : "#1F3A3D", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{serie}</span>
+              <span style={{ background: dk ? "#2E2540" : "#f0e8f8", color: dk ? "#B88FD0" : "#5b2580", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{disciplina}</span>
+              <span style={{ background: dk ? "#3A3020" : "#fff7d6", color: dk ? "#D4A84A" : "#7a5700", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{tema}</span>
             </div>
             <div style={{
-              background: cores.card, padding: "28px 24px", borderRadius: 12,
-              border: `1px solid ${cores.cardBorder}`, fontSize: 14, lineHeight: 1.7,
-              color: cores.text, whiteSpace: "pre-wrap", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+              background: "#fff", padding: "28px 24px", borderRadius: 12,
+              border: "1px solid #ddd", fontSize: 14, lineHeight: 1.7,
+              color: "#222", whiteSpace: "pre-wrap", boxShadow: dk ? "0 4px 20px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.04)",
             }}>
               <style>{activityStyles}</style>
               <div
