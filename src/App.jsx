@@ -116,6 +116,19 @@ FORMATO DE SAÍDA (use Markdown simples):
 ${config.gabarito ? "---\n## 📋 Gabarito do Professor\n(respostas aqui)" : ""}
 
 Gere a atividade agora. Seja criativo e pedagógico.
+${config.modoProva ? `MODO PROVA: Esta é uma PROVA, não uma atividade. Ajustes:
+- Use tom formal e avaliativo (sem "vamos aprender", sem linguagem lúdica)
+- Numere as questões como "Questão 1", "Questão 2"
+${config.valorQuestao ? `- Cada questão vale ${config.valorQuestao} pontos — indique "(${config.valorQuestao} pontos)" ao lado de cada questão` : ""}
+${config.tempoEstimado ? `- Tempo estimado: ${config.tempoEstimado} minutos` : ""}` : ""}
+${config.recadoResponsavel ? `
+RECADO PARA O RESPONSÁVEL: Ao final da atividade, ANTES do gabarito, inclua uma seção:
+## 📩 Recado para o Responsável
+Escreva um bilhete curto (3-4 linhas) explicando ao pai/mãe:
+- O tema que o aluno está estudando
+- O objetivo pedagógico desta atividade
+- Como o responsável pode ajudar em casa
+Use linguagem acolhedora e acessível.` : ""}
 ${config.alunoSelecionado ? `
 PERFIL DO ALUNO (adapte a atividade com base nessas informações):
 Nome: ${config.alunoSelecionado.nome}
@@ -186,6 +199,14 @@ export default function App() {
   const [niveis, setNiveis] = useState({ facil: 30, medio: 50, dificil: 20 });
   const [letraMaiuscula, setLetraMaiuscula] = useState(false);
   const [negrito, setNegrito] = useState(false);
+  const [modoProva, setModoProva] = useState(false);
+  const [valorQuestao, setValorQuestao] = useState("");
+  const [tempoEstimado, setTempoEstimado] = useState("");
+  const [recadoResponsavel, setRecadoResponsavel] = useState(false);
+  const [geracaoLote, setGeracaoLote] = useState(false);
+  const [alunosLote, setAlunosLote] = useState([]);
+  const [lotePorcentagem, setLotePorcentagem] = useState(0);
+  const [loteGerando, setLoteGerando] = useState(false);
   const [necessidades, setNecessidades] = useState([]);
   const [outraNecessidade, setOutraNecessidade] = useState("");
   const [modoEscuro, setModoEscuro] = useState(false);
@@ -224,6 +245,34 @@ export default function App() {
   const [filtroDisc, setFiltroDisc] = useState("");
   const [filtroSerie, setFiltroSerie] = useState("");
   const [filtroBuscaAtiv, setFiltroBuscaAtiv] = useState("");
+  const [recadoGerado, setRecadoGerado] = useState({});
+  const [recadoCarregando, setRecadoCarregando] = useState(null);
+
+  const gerarRecadoHistorico = async (ativ) => {
+    setRecadoCarregando(ativ.id);
+    try {
+      const prompt = `Você é um professor do Colégio Gênesis Life. Escreva um RECADO CURTO (máximo 5 linhas) para o responsável do aluno${ativ.aluno_nome ? ` ${ativ.aluno_nome}` : ""} sobre a atividade de ${ativ.disciplina} com o tema "${ativ.tema}" (${ativ.serie}).
+
+O recado deve:
+- Explicar o tema que o aluno está estudando
+- Dizer o objetivo pedagógico
+- Sugerir como o responsável pode ajudar em casa
+- Usar linguagem acolhedora e acessível
+
+Comece com "Prezado(a) responsável," e termine com "Atenciosamente, Equipe Pedagógica — Colégio Gênesis Life".`;
+
+      const response = await fetch("/api/gerar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await response.json();
+      if (response.ok && data.text) {
+        setRecadoGerado((prev) => ({ ...prev, [ativ.id]: data.text }));
+      }
+    } catch (e) {}
+    setRecadoCarregando(null);
+  };
 
   const carregarAtividades = async () => {
     const { data } = await supabase.from("atividades").select("*").order("criado_em", { ascending: false });
@@ -313,7 +362,7 @@ export default function App() {
     setLoading(true);
     setResultado("");
     try {
-      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, tiposOrdem, progressao, niveis, necessidades, outraNecessidade, letraMaiuscula, negrito, alunoSelecionado });
+      const prompt = buildPrompt({ segmento, serie, disciplina, tema, tipos, gabarito, outroTexto, tiposArea, tiposOrdem, progressao, niveis, necessidades, outraNecessidade, letraMaiuscula, negrito, alunoSelecionado, modoProva, valorQuestao, tempoEstimado, recadoResponsavel });
 
       // Chama a serverless function /api/gerar (a chave fica segura no servidor)
       const response = await fetch("/api/gerar", {
@@ -349,6 +398,63 @@ export default function App() {
     }
   };
 
+  const gerarEmLote = async () => {
+    if (alunosLote.length === 0) return;
+    if (tiposAtivos().length === 0) {
+      setError("Selecione pelo menos um tipo de questão.");
+      return;
+    }
+    setLoteGerando(true);
+    setLotePorcentagem(0);
+
+    for (let i = 0; i < alunosLote.length; i++) {
+      const aluno = alunosLote[i];
+      try {
+        const prompt = buildPrompt({
+          segmento, serie: aluno.serie || serie, disciplina, tema, tipos, gabarito, outroTexto,
+          tiposArea, tiposOrdem, progressao, niveis,
+          necessidades: aluno.necessidades || [], outraNecessidade: "",
+          letraMaiuscula, negrito, alunoSelecionado: aluno,
+          modoProva, valorQuestao, tempoEstimado, recadoResponsavel,
+        });
+
+        const response = await fetch("/api/gerar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        });
+        const data = await response.json();
+
+        if (response.ok && data.text) {
+          await supabase.from("atividades").insert({
+            aluno_id: aluno.id,
+            aluno_nome: aluno.nome,
+            disciplina,
+            serie: aluno.serie || serie,
+            tema,
+            tipos_questao: tipos,
+            conteudo: data.text,
+          });
+        }
+      } catch (e) {}
+      setLotePorcentagem(Math.round(((i + 1) / alunosLote.length) * 100));
+    }
+
+    setLoteGerando(false);
+    setGeracaoLote(false);
+    setAlunosLote([]);
+    carregarAtividades();
+    alert(`✅ ${alunosLote.length} atividades geradas com sucesso! Confira no Histórico.`);
+  };
+
+  const toggleAlunoLote = (aluno) => {
+    setAlunosLote((prev) =>
+      prev.find((a) => a.id === aluno.id)
+        ? prev.filter((a) => a.id !== aluno.id)
+        : [...prev, aluno]
+    );
+  };
+
   const resetar = () => {
     setStep(1);
     setSegmento("");
@@ -366,6 +472,13 @@ export default function App() {
     setNiveis({ facil: 30, medio: 50, dificil: 20 });
     setLetraMaiuscula(false);
     setNegrito(false);
+    setModoProva(false);
+    setValorQuestao("");
+    setTempoEstimado("");
+    setRecadoResponsavel(false);
+    setGeracaoLote(false);
+    setAlunosLote([]);
+    setLotePorcentagem(0);
     setNecessidades([]);
     setOutraNecessidade("");
     setAlunoSelecionado(null);
@@ -450,7 +563,7 @@ export default function App() {
   </tr>
   <tr>
     <td style="border:1px solid #555; text-align:center; vertical-align:middle; padding:6px; font-size:11pt;">
-      Atividade Adaptada de ${disciplina} - ${tema}
+      ${modoProva ? `Prova de ${disciplina}` : `Atividade Adaptada de ${disciplina} - ${tema}`}
     </td>
   </tr>
 </table>
@@ -468,6 +581,7 @@ export default function App() {
     <td width="23%" style="border:1px solid #555; padding:6px 10px; font-size:11pt;">Nota:</td>
   </tr>
 </table>
+${modoProva && tempoEstimado ? `<p style="font-size:11pt; text-align:right; color:#555;"><strong>Tempo estimado:</strong> ${tempoEstimado} minutos</p>` : ""}
 
 ${renderMarkdown(resultado)}
 
@@ -999,6 +1113,14 @@ ${renderMarkdown(resultado)}
                         background: cores.card, color: cores.text, fontSize: 12, fontWeight: 600,
                         cursor: "pointer",
                       }}>👁️ Ver</button>
+                      <button onClick={() => gerarRecadoHistorico(ativ)}
+                        disabled={recadoCarregando === ativ.id}
+                        style={{
+                        padding: "6px 14px", borderRadius: 8, border: `1px solid ${cores.cardBorder}`,
+                        background: cores.card, color: cores.text, fontSize: 12, fontWeight: 600,
+                        cursor: recadoCarregando === ativ.id ? "wait" : "pointer",
+                        opacity: recadoCarregando === ativ.id ? 0.6 : 1,
+                      }}>{recadoCarregando === ativ.id ? "⏳" : "📩"} Recado</button>
                       <button onClick={async () => {
                         await supabase.from("atividades").delete().eq("id", ativ.id);
                         carregarAtividades();
@@ -1008,6 +1130,23 @@ ${renderMarkdown(resultado)}
                         cursor: "pointer",
                       }}>🗑️</button>
                     </div>
+                    {recadoGerado[ativ.id] && (
+                      <div style={{
+                        marginTop: 10, padding: "14px 16px", borderRadius: 10,
+                        background: dk ? "#1F3A2E" : "#F0F8F0", border: `1px solid ${dk ? "#2E5040" : "#C8E6C9"}`,
+                      }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: dk ? "#7BA896" : "#2E7D32", marginBottom: 6 }}>📩 Recado para o responsável:</div>
+                        <div style={{ fontSize: 13, color: cores.text, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{recadoGerado[ativ.id]}</div>
+                        <button onClick={() => {
+                          navigator.clipboard.writeText(recadoGerado[ativ.id]);
+                          alert("Recado copiado!");
+                        }} style={{
+                          marginTop: 8, padding: "5px 12px", borderRadius: 6,
+                          border: `1px solid ${cores.cardBorder}`, background: cores.card,
+                          color: cores.text, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                        }}>📋 Copiar</button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1111,6 +1250,78 @@ ${renderMarkdown(resultado)}
                 </>
               )}
             </div>
+
+            {/* Geração em lote */}
+            {alunos.length > 0 && (
+              <div style={{
+                background: cores.card, borderRadius: 12, padding: "14px 16px",
+                border: `1px solid ${cores.cardBorder}`, marginBottom: 20,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <label style={{ ...labelStyle, margin: 0 }}>🚀 Geração em lote</label>
+                  <button onClick={() => setGeracaoLote(!geracaoLote)} style={{
+                    background: geracaoLote ? "#1F3A3D" : "none",
+                    border: geracaoLote ? "none" : `1px solid ${cores.cardBorder}`,
+                    borderRadius: 8, padding: "4px 12px", cursor: "pointer",
+                    fontSize: 12, fontWeight: 600,
+                    color: geracaoLote ? "#fff" : cores.textSub,
+                  }}>
+                    {geracaoLote ? "Fechar" : "Abrir"}
+                  </button>
+                </div>
+                {geracaoLote && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 12, color: cores.textSub, marginBottom: 8 }}>
+                      Selecione os alunos pra gerar uma atividade personalizada pra cada um:
+                    </div>
+                    <div style={{ maxHeight: 200, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+                      {alunos.map((aluno) => {
+                        const sel = alunosLote.find((a) => a.id === aluno.id);
+                        return (
+                          <button key={aluno.id} onClick={() => toggleAlunoLote(aluno)} style={{
+                            display: "flex", alignItems: "center", gap: 8,
+                            padding: "8px 10px", borderRadius: 8,
+                            border: sel ? "2px solid #1F3A3D" : `1px solid ${cores.cardBorder}`,
+                            background: sel ? cores.cardActiveBg : cores.card,
+                            cursor: "pointer", textAlign: "left", width: "100%",
+                          }}>
+                            <span style={{
+                              width: 20, height: 20, borderRadius: 5, display: "flex",
+                              alignItems: "center", justifyContent: "center", fontSize: 12,
+                              background: sel ? "#1F3A3D" : "transparent",
+                              border: sel ? "none" : `2px solid ${cores.cardBorder}`,
+                              color: "white", fontWeight: 700,
+                            }}>{sel ? "✓" : ""}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: cores.text }}>{aluno.nome}</div>
+                              <div style={{ fontSize: 11, color: cores.textSub }}>{aluno.serie}{aluno.turma ? ` — ${aluno.turma}` : ""}</div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {alunosLote.length > 0 && (
+                      <div style={{ marginTop: 12 }}>
+                        <div style={{ fontSize: 12, color: cores.textSub, marginBottom: 8 }}>
+                          {alunosLote.length} aluno(s) selecionado(s)
+                          {loteGerando && ` — ${lotePorcentagem}%`}
+                        </div>
+                        {loteGerando && (
+                          <div style={{ height: 6, borderRadius: 3, background: cores.cardBorder, marginBottom: 8 }}>
+                            <div style={{ height: 6, borderRadius: 3, background: "#1F3A3D", width: `${lotePorcentagem}%`, transition: "width 0.3s" }} />
+                          </div>
+                        )}
+                        <button onClick={gerarEmLote} disabled={loteGerando} style={{
+                          ...nextBtnStyle, marginTop: 0, opacity: loteGerando ? 0.7 : 1,
+                        }}>
+                          {loteGerando ? `⏳ Gerando... ${lotePorcentagem}%` : `🚀 Gerar ${alunosLote.length} atividades`}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <h2 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
               Série e Disciplina
@@ -1414,6 +1625,48 @@ ${renderMarkdown(resultado)}
                 }} />
               </button>
             </div>
+
+            {/* Modo Prova */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              marginTop: 10, padding: "12px 14px",
+              background: cores.card, borderRadius: 10, border: `2px solid ${cores.cardBorder}`,
+            }}>
+              <span style={{ fontSize: 14, flex: 1, fontWeight: 500, color: cores.text }}>
+                📝 Modo Prova
+              </span>
+              <button onClick={() => setModoProva(!modoProva)} style={{
+                width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
+                background: modoProva ? "#1F3A3D" : "#C7BFAE",
+                position: "relative", transition: "background 0.2s",
+              }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 10, background: cores.card,
+                  position: "absolute", top: 3, left: modoProva ? 25 : 3, transition: "left 0.2s",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }} />
+              </button>
+            </div>
+            {modoProva && (
+              <div style={{
+                display: "flex", gap: 10, padding: "10px 14px", marginTop: 4,
+                background: cores.areaSubBg, borderRadius: 10, border: `1px solid ${cores.cardBorder}`,
+                flexWrap: "wrap",
+              }}>
+                <div style={{ flex: 1, minWidth: 120 }}>
+                  <label style={{ fontSize: 11, color: cores.textSub, display: "block", marginBottom: 4 }}>Valor por questão</label>
+                  <input type="text" placeholder="Ex: 1,0" value={valorQuestao}
+                    onChange={(e) => setValorQuestao(e.target.value)}
+                    style={{ ...inputStyle, padding: "8px 10px", fontSize: 13 }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 120 }}>
+                  <label style={{ fontSize: 11, color: cores.textSub, display: "block", marginBottom: 4 }}>Tempo estimado (min)</label>
+                  <input type="text" placeholder="Ex: 45" value={tempoEstimado}
+                    onChange={(e) => setTempoEstimado(e.target.value)}
+                    style={{ ...inputStyle, padding: "8px 10px", fontSize: 13 }} />
+                </div>
+              </div>
+            )}
 
             {/* Necessidades do aluno */}
             <label style={{ ...labelStyle, marginTop: 20 }}>Necessidades do aluno (opcional)</label>
