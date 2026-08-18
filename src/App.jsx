@@ -1301,21 +1301,8 @@ ${renderMarkdown(resultado)}
                       })}
                     </div>
                     {alunosLote.length > 0 && (
-                      <div style={{ marginTop: 12 }}>
-                        <div style={{ fontSize: 12, color: cores.textSub, marginBottom: 8 }}>
-                          {alunosLote.length} aluno(s) selecionado(s)
-                          {loteGerando && ` — ${lotePorcentagem}%`}
-                        </div>
-                        {loteGerando && (
-                          <div style={{ height: 6, borderRadius: 3, background: cores.cardBorder, marginBottom: 8 }}>
-                            <div style={{ height: 6, borderRadius: 3, background: "#1F3A3D", width: `${lotePorcentagem}%`, transition: "width 0.3s" }} />
-                          </div>
-                        )}
-                        <button onClick={gerarEmLote} disabled={loteGerando} style={{
-                          ...nextBtnStyle, marginTop: 0, opacity: loteGerando ? 0.7 : 1,
-                        }}>
-                          {loteGerando ? `⏳ Gerando... ${lotePorcentagem}%` : `🚀 Gerar ${alunosLote.length} atividades`}
-                        </button>
+                      <div style={{ marginTop: 8, fontSize: 12, color: cores.textSub }}>
+                        ✅ {alunosLote.length} aluno(s) selecionado(s) — configure a atividade e gere no final.
                       </div>
                     )}
                   </div>
@@ -1323,49 +1310,74 @@ ${renderMarkdown(resultado)}
               </div>
             )}
 
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
-              Série e Disciplina
-            </h2>
-            <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 20px" }}>
-              Selecione o segmento, a série e a disciplina da atividade.
-            </p>
-            <label style={labelStyle}>Segmento</label>
-            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-              {Object.keys(SERIES_OPTIONS).map((seg) => (
-                <button key={seg} onClick={() => { setSegmento(seg); setSerie(""); setDisciplina(""); }}
-                  style={{ ...chipStyle, background: segmento === seg ? "#1F3A3D" : cores.card, color: segmento === seg ? "white" : cores.text, border: segmento === seg ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
-                  {seg}
-                </button>
-              ))}
-            </div>
-            {segmento && (
+            {alunosLote.length > 0 ? (
               <>
-                <label style={labelStyle}>Série</label>
-                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                  {SERIES_OPTIONS[segmento].map((s) => (
-                    <button key={s} onClick={() => setSerie(s)}
-                      style={{ ...chipStyle, background: serie === s ? "#1F3A3D" : cores.card, color: serie === s ? "white" : cores.text, border: serie === s ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-            {serie && (
-              <>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
+                  Disciplina
+                </h2>
+                <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 20px" }}>
+                  A série vem do cadastro de cada aluno. Escolha a disciplina.
+                </p>
                 <label style={labelStyle}>Disciplina</label>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {DISCIPLINAS[segmento].map((d) => (
+                  {[...new Set(Object.values(DISCIPLINAS).flat())].map((d) => (
                     <button key={d} onClick={() => setDisciplina(d)}
                       style={{ ...chipStyle, background: disciplina === d ? "#1F3A3D" : cores.card, color: disciplina === d ? "white" : cores.text, border: disciplina === d ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
                       {d}
                     </button>
                   ))}
                 </div>
+                {disciplina && (
+                  <button onClick={() => setStep(2)} style={nextBtnStyle}>Próximo →</button>
+                )}
               </>
-            )}
-            {disciplina && (
-              <button onClick={() => setStep(2)} style={nextBtnStyle}>Próximo →</button>
+            ) : (
+              <>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
+                  Série e Disciplina
+                </h2>
+                <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 20px" }}>
+                  Selecione o segmento, a série e a disciplina da atividade.
+                </p>
+                <label style={labelStyle}>Segmento</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                  {Object.keys(SERIES_OPTIONS).map((seg) => (
+                    <button key={seg} onClick={() => { setSegmento(seg); setSerie(""); setDisciplina(""); }}
+                      style={{ ...chipStyle, background: segmento === seg ? "#1F3A3D" : cores.card, color: segmento === seg ? "white" : cores.text, border: segmento === seg ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                      {seg}
+                    </button>
+                  ))}
+                </div>
+                {segmento && (
+                  <>
+                    <label style={labelStyle}>Série</label>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                      {SERIES_OPTIONS[segmento].map((s) => (
+                        <button key={s} onClick={() => setSerie(s)}
+                          style={{ ...chipStyle, background: serie === s ? "#1F3A3D" : cores.card, color: serie === s ? "white" : cores.text, border: serie === s ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {serie && (
+                  <>
+                    <label style={labelStyle}>Disciplina</label>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {DISCIPLINAS[segmento].map((d) => (
+                        <button key={d} onClick={() => setDisciplina(d)}
+                          style={{ ...chipStyle, background: disciplina === d ? "#1F3A3D" : cores.card, color: disciplina === d ? "white" : cores.text, border: disciplina === d ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {disciplina && (
+                  <button onClick={() => setStep(2)} style={nextBtnStyle}>Próximo →</button>
+                )}
+              </>
             )}
           </div>
         )}
