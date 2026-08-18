@@ -207,6 +207,27 @@ export default function App() {
   const [alunosLote, setAlunosLote] = useState([]);
   const [lotePorcentagem, setLotePorcentagem] = useState(0);
   const [loteGerando, setLoteGerando] = useState(false);
+
+  // PRO states
+  const [proStep, setProStep] = useState(1);
+  const [proSegmento, setProSegmento] = useState("");
+  const [proSerie, setProSerie] = useState("");
+  const [proDisciplina, setProDisciplina] = useState("");
+  const [proTema, setProTema] = useState("");
+  const [proQtdQuestoes, setProQtdQuestoes] = useState(6);
+  const [proDificuldade, setProDificuldade] = useState("progressivo");
+  const [proImagens, setProImagens] = useState("algumas");
+  const [proEstiloImagem, setProEstiloImagem] = useState("automatico");
+  const [proTipoAtividade, setProTipoAtividade] = useState("mista");
+  const [proAreaResposta, setProAreaResposta] = useState("media");
+  const [proGabarito, setProGabarito] = useState(true);
+  const [proAlunoSelecionado, setProAlunoSelecionado] = useState(null);
+  const [proNecessidades, setProNecessidades] = useState([]);
+  const [proLoading, setProLoading] = useState(false);
+  const [proLoadingMsg, setProLoadingMsg] = useState("");
+  const [proResultado, setProResultado] = useState(null);
+  const [proImgsGeradas, setProImgsGeradas] = useState({});
+  const [proError, setProError] = useState("");
   const [necessidades, setNecessidades] = useState([]);
   const [outraNecessidade, setOutraNecessidade] = useState("");
   const [modoEscuro, setModoEscuro] = useState(false);
@@ -455,6 +476,202 @@ Comece com "Prezado(a) responsável," e termine com "Atenciosamente, Equipe Peda
     );
   };
 
+  // PRO - Gerar atividade com imagens
+  const gerarPro = async () => {
+    setProError("");
+    setProLoading(true);
+    setProLoadingMsg("Gerando questões com IA...");
+    setProImgsGeradas({});
+
+    const nivelImg = { "sem": 0, "poucas": 1, "algumas": 3, "muitas": 5 };
+    const maxImgs = nivelImg[proImagens] || 3;
+
+    const prompt = `Você é um especialista em educação. Gere uma atividade escolar em formato JSON.
+
+SÉRIE: ${proAlunoSelecionado?.serie || proSerie}
+DISCIPLINA: ${proDisciplina}
+TEMA: ${proTema}
+QUANTIDADE DE QUESTÕES: ${proQtdQuestoes}
+DIFICULDADE: ${proDificuldade}
+TIPO DE ATIVIDADE: ${proTipoAtividade}
+ÁREA DE RESPOSTA: ${proAreaResposta}
+${proGabarito ? "INCLUIR GABARITO" : "SEM GABARITO"}
+MÁXIMO DE IMAGENS: ${maxImgs} (só quando realmente útil pedagogicamente)
+ESTILO DAS IMAGENS: ${proEstiloImagem}
+${proAlunoSelecionado ? `ALUNO: ${proAlunoSelecionado.nome}
+NECESSIDADES: ${(proAlunoSelecionado.necessidades || []).join(", ")}
+OBSERVAÇÕES: ${proAlunoSelecionado.observacoes || ""}` : ""}
+${proNecessidades.length > 0 ? `ADAPTAÇÕES: ${proNecessidades.join(", ")}` : ""}
+
+REGRAS:
+1. Comece com um TEXTO BASE sobre o tema que contenha as respostas das questões.
+2. Adapte a linguagem à série.
+3. Se precisaImagem=true, escreva um promptImagem detalhado para gerar a imagem.
+4. NÃO coloque imagem em todas as questões — só onde faz diferença pedagógica.
+5. Respeite o máximo de ${maxImgs} imagens.
+
+Responda APENAS com JSON válido, sem markdown, neste formato:
+{
+  "textoBase": "texto introdutório sobre o tema...",
+  "questoes": [
+    {
+      "numero": 1,
+      "tipo": "multipla_escolha",
+      "enunciado": "texto da questão",
+      "precisaImagem": false,
+      "promptImagem": null,
+      "alternativas": ["A) ...", "B) ...", "C) ..."],
+      "resposta": "A"
+    },
+    {
+      "numero": 2,
+      "tipo": "complete",
+      "enunciado": "Complete: O sol é uma ______",
+      "precisaImagem": true,
+      "promptImagem": "Ilustração didática do sistema solar mostrando o sol no centro, planetas ao redor, fundo branco, sem texto",
+      "alternativas": null,
+      "resposta": "estrela"
+    }
+  ],
+  "gabarito": ${proGabarito ? '"texto do gabarito completo"' : "null"}
+}`;
+
+    try {
+      const response = await fetch("/api/gerar-pro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error);
+
+      const resultado = data.json || JSON.parse(data.text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
+      setProResultado(resultado);
+
+      // Gerar imagens
+      const questoesComImagem = resultado.questoes.filter((q) => q.precisaImagem && q.promptImagem);
+
+      if (questoesComImagem.length > 0) {
+        setProLoadingMsg(`Gerando ${questoesComImagem.length} imagem(ns)...`);
+
+        for (const q of questoesComImagem) {
+          try {
+            setProLoadingMsg(`Gerando imagem da questão ${q.numero}...`);
+            const imgResponse = await fetch("/api/gerar-imagem", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ prompt: q.promptImagem, estilo: proEstiloImagem }),
+            });
+            const imgData = await imgResponse.json();
+
+            if (imgResponse.ok && imgData.image) {
+              setProImgsGeradas((prev) => ({
+                ...prev,
+                [q.numero]: { data: imgData.image, mime: imgData.mimeType },
+              }));
+            }
+          } catch (e) {
+            // Imagem falhou — continua sem ela
+          }
+        }
+      }
+
+      // Salvar no Supabase
+      await supabase.from("atividades").insert({
+        aluno_id: proAlunoSelecionado?.id || null,
+        aluno_nome: proAlunoSelecionado?.nome || null,
+        disciplina: proDisciplina,
+        serie: proAlunoSelecionado?.serie || proSerie,
+        tema: proTema,
+        tipos_questao: { tipo: proTipoAtividade, pro: true },
+        conteudo: JSON.stringify(resultado),
+      });
+      carregarAtividades();
+
+      setProStep(3);
+    } catch (e) {
+      setProError("Erro na geração. Tente novamente.");
+    } finally {
+      setProLoading(false);
+      setProLoadingMsg("");
+    }
+  };
+
+  const baixarWordPro = async () => {
+    try {
+      const logoResponse = await fetch("/logo-genesis.png");
+      const logoBlob = await logoResponse.blob();
+      const logoDataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(logoBlob);
+      });
+
+      const r = proResultado;
+      let questoesHtml = "";
+
+      for (const q of r.questoes) {
+        const img = proImgsGeradas[q.numero];
+        questoesHtml += `<h3 style="margin-top:20px; font-size:12pt;">Questão ${q.numero}</h3>`;
+        if (img) {
+          questoesHtml += `<p><img src="data:${img.mime};base64,${img.data}" width="300" style="border:1px solid #ddd; border-radius:4px;" /></p>`;
+        }
+        questoesHtml += `<p>${q.enunciado}</p>`;
+        if (q.alternativas) {
+          questoesHtml += q.alternativas.map((a) => `<p style="margin-left:20px;">${a}</p>`).join("");
+        }
+        const areaH = proAreaResposta === "pequena" ? 30 : proAreaResposta === "grande" ? 100 : 60;
+        if (!q.alternativas) {
+          questoesHtml += `<div style="border:1px solid #ccc; min-height:${areaH}px; margin:10px 0; border-radius:4px;"></div>`;
+        }
+      }
+
+      let gabaritoHtml = "";
+      if (r.gabarito) {
+        gabaritoHtml = `<hr/><h2 style="font-size:14pt; color:#c0392b;">Gabarito do Professor</h2><p>${typeof r.gabarito === "string" ? r.gabarito : r.questoes.map((q) => `${q.numero}) ${q.resposta}`).join("<br/>")}</p>`;
+      }
+
+      const doc = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8"><style>
+@page{size:A4;margin:1.5cm}body{font-family:Arial,sans-serif;font-size:12pt;line-height:1.6;color:#222}
+h2{font-size:14pt;margin-top:20px}h3{font-size:12pt;margin-top:16px}hr{border:0;border-top:1px solid #999;margin:14px 0}
+</style></head><body>
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:0">
+<tr><td rowspan="2" width="90" style="border:1px solid #555;text-align:center;vertical-align:middle;padding:6px">
+<img src="${logoDataUrl}" width="55" alt="Logo"/><br/><span style="font-size:6pt;font-weight:bold;color:#555">COLÉGIO<br/>GÊNESIS<br/>LIFE</span></td>
+<td style="border:1px solid #555;text-align:center;vertical-align:middle;padding:6px;font-size:14pt;font-weight:bold">Colégio Genesis Life</td></tr>
+<tr><td style="border:1px solid #555;text-align:center;vertical-align:middle;padding:6px;font-size:11pt">${proDisciplina} - ${proTema}</td></tr></table>
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:0">
+<tr><td width="82%" style="border:1px solid #555;padding:6px 10px;font-size:11pt">Nome:</td>
+<td style="border:1px solid #555;padding:6px 10px;font-size:11pt">Nº</td></tr></table>
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:16px">
+<tr><td width="30%" style="border:1px solid #555;padding:6px 10px;font-size:11pt">Prof.</td>
+<td width="25%" style="border:1px solid #555;padding:6px 10px;font-size:11pt;text-align:center">____/____/ 2026</td>
+<td width="22%" style="border:1px solid #555;padding:6px 10px;font-size:11pt">Turma:</td>
+<td width="23%" style="border:1px solid #555;padding:6px 10px;font-size:11pt">Nota:</td></tr></table>
+<h2>📖 Leia o texto com atenção:</h2>
+<p>${r.textoBase}</p><hr/>
+${questoesHtml}
+${gabaritoHtml}
+</body></html>`;
+
+      const blob = new Blob(["\ufeff", doc], { type: "application/msword;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `atividade-pro-${proDisciplina}-${proTema}.doc`.replace(/\s+/g, "-").toLowerCase();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setProError("Erro ao gerar Word.");
+    }
+  };
+
   const resetar = () => {
     setStep(1);
     setSegmento("");
@@ -653,7 +870,8 @@ ${renderMarkdown(resultado)}
 
   const MENU = [
     { id: "dashboard", label: "Dashboard", icon: "📊" },
-    { id: "gerador", label: "Gerar Atividade", icon: "✨" },
+    { id: "gerador", label: "Atividade", icon: "✨" },
+    { id: "pro", label: "PRO", icon: "🚀" },
     { id: "alunos", label: "Alunos", icon: "👩‍🎓" },
     { id: "historico", label: "Histórico", icon: "📋" },
   ];
@@ -1155,6 +1373,257 @@ ${renderMarkdown(resultado)}
         )}
 
         {/* Gerador de Atividades */}
+        {/* GERADOR PRO */}
+        {pagina === "pro" && (
+          <div style={{ maxWidth: 560, margin: "0 auto", padding: "24px 16px 40px" }}>
+
+            {proStep === 1 && (
+              <div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
+                  🚀 Gerador PRO
+                </h2>
+                <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 24px" }}>
+                  Atividades avançadas com imagens geradas por IA.
+                </p>
+
+                {/* Aluno (opcional) */}
+                {alunos.length > 0 && (
+                  <div style={{ background: cores.card, borderRadius: 12, padding: "14px 16px", border: `1px solid ${cores.cardBorder}`, marginBottom: 16 }}>
+                    <label style={{ ...labelStyle, margin: "0 0 8px 0" }}>👩‍🎓 Aluno (opcional)</label>
+                    {proAlunoSelecionado ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, background: cores.cardActiveBg, border: "1px solid #1F3A3D" }}>
+                        <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: cores.text }}>{proAlunoSelecionado.nome} — {proAlunoSelecionado.serie}</span>
+                        <button onClick={() => setProAlunoSelecionado(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: cores.textSub }}>✕</button>
+                      </div>
+                    ) : (
+                      <div style={{ maxHeight: 150, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+                        {alunos.map((a) => (
+                          <button key={a.id} onClick={() => { setProAlunoSelecionado(a); setProSerie(a.serie); setProNecessidades(a.necessidades || []); }}
+                            style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", borderRadius: 8, border: `1px solid ${cores.cardBorder}`, background: cores.card, cursor: "pointer", textAlign: "left", width: "100%", fontSize: 13, color: cores.text }}>
+                            {a.nome} <span style={{ fontSize: 11, color: cores.textSub }}>— {a.serie}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Série (se não tem aluno) */}
+                {!proAlunoSelecionado && (
+                  <>
+                    <label style={labelStyle}>Segmento</label>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                      {Object.keys(SERIES_OPTIONS).map((seg) => (
+                        <button key={seg} onClick={() => { setProSegmento(seg); setProSerie(""); }}
+                          style={{ ...chipStyle, background: proSegmento === seg ? "#1F3A3D" : cores.card, color: proSegmento === seg ? "white" : cores.text, border: proSegmento === seg ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                          {seg}
+                        </button>
+                      ))}
+                    </div>
+                    {proSegmento && (
+                      <>
+                        <label style={labelStyle}>Série</label>
+                        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                          {SERIES_OPTIONS[proSegmento].map((s) => (
+                            <button key={s} onClick={() => setProSerie(s)}
+                              style={{ ...chipStyle, background: proSerie === s ? "#1F3A3D" : cores.card, color: proSerie === s ? "white" : cores.text, border: proSerie === s ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* Disciplina */}
+                <label style={labelStyle}>Disciplina</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                  {[...new Set(Object.values(DISCIPLINAS).flat())].map((d) => (
+                    <button key={d} onClick={() => setProDisciplina(d)}
+                      style={{ ...chipStyle, background: proDisciplina === d ? "#1F3A3D" : cores.card, color: proDisciplina === d ? "white" : cores.text, border: proDisciplina === d ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                      {d}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Tema */}
+                <label style={labelStyle}>Tema</label>
+                <input type="text" placeholder="Ex: Frações, Sistema Solar, Animais..." value={proTema} onChange={(e) => setProTema(e.target.value)} style={{ ...inputStyle, marginBottom: 12 }} />
+
+                {(proSerie || proAlunoSelecionado) && proDisciplina && proTema.trim() && (
+                  <button onClick={() => setProStep(2)} style={nextBtnStyle}>Próximo →</button>
+                )}
+              </div>
+            )}
+
+            {proStep === 2 && (
+              <div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
+                  🚀 Configurações PRO
+                </h2>
+                <p style={{ fontSize: 13, color: cores.textSub, margin: "0 0 20px" }}>
+                  {proDisciplina} — {proTema} {proAlunoSelecionado ? `— ${proAlunoSelecionado.nome}` : ""}
+                </p>
+
+                {/* Quantidade */}
+                <label style={labelStyle}>Quantidade de questões</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                  {[3, 5, 6, 8, 10].map((n) => (
+                    <button key={n} onClick={() => setProQtdQuestoes(n)}
+                      style={{ ...chipStyle, background: proQtdQuestoes === n ? "#1F3A3D" : cores.card, color: proQtdQuestoes === n ? "white" : cores.text, border: proQtdQuestoes === n ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Dificuldade */}
+                <label style={labelStyle}>Nível de dificuldade</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                  {[{ id: "facil", label: "Fácil" }, { id: "medio", label: "Médio" }, { id: "dificil", label: "Difícil" }, { id: "progressivo", label: "Progressivo" }].map((n) => (
+                    <button key={n.id} onClick={() => setProDificuldade(n.id)}
+                      style={{ ...chipStyle, background: proDificuldade === n.id ? "#1F3A3D" : cores.card, color: proDificuldade === n.id ? "white" : cores.text, border: proDificuldade === n.id ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                      {n.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Tipo de atividade */}
+                <label style={labelStyle}>Tipo de atividade</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                  {[{ id: "mista", label: "Mista" }, { id: "multipla_escolha", label: "Múltipla escolha" }, { id: "aberta", label: "Perguntas abertas" }, { id: "complete", label: "Complete" }, { id: "ligue", label: "Ligue/Associe" }, { id: "vf", label: "V ou F" }, { id: "interpretacao", label: "Interpretação" }].map((t) => (
+                    <button key={t.id} onClick={() => setProTipoAtividade(t.id)}
+                      style={{ ...chipStyle, fontSize: 12, background: proTipoAtividade === t.id ? "#1F3A3D" : cores.card, color: proTipoAtividade === t.id ? "white" : cores.text, border: proTipoAtividade === t.id ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Imagens */}
+                <label style={labelStyle}>Uso de imagens</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                  {[{ id: "sem", label: "Sem imagens" }, { id: "poucas", label: "Poucas" }, { id: "algumas", label: "Algumas" }, { id: "muitas", label: "Muitas" }].map((i) => (
+                    <button key={i.id} onClick={() => setProImagens(i.id)}
+                      style={{ ...chipStyle, fontSize: 12, background: proImagens === i.id ? "#1F3A3D" : cores.card, color: proImagens === i.id ? "white" : cores.text, border: proImagens === i.id ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                      {i.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Estilo das imagens */}
+                {proImagens !== "sem" && (
+                  <>
+                    <label style={labelStyle}>Estilo das imagens</label>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                      {[{ id: "automatico", label: "Automático" }, { id: "didatica", label: "Didática" }, { id: "infantil", label: "Infantil" }, { id: "realista", label: "Realista" }, { id: "colorir", label: "P/ colorir" }, { id: "esquema", label: "Esquema" }].map((e) => (
+                        <button key={e.id} onClick={() => setProEstiloImagem(e.id)}
+                          style={{ ...chipStyle, fontSize: 12, background: proEstiloImagem === e.id ? "#C1683C" : cores.card, color: proEstiloImagem === e.id ? "white" : cores.text, border: proEstiloImagem === e.id ? "2px solid #C1683C" : `2px solid ${cores.cardBorder}` }}>
+                          {e.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Área de resposta */}
+                <label style={labelStyle}>Área para resposta</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                  {[{ id: "pequena", label: "Pequena" }, { id: "media", label: "Média" }, { id: "grande", label: "Grande" }].map((a) => (
+                    <button key={a.id} onClick={() => setProAreaResposta(a.id)}
+                      style={{ ...chipStyle, background: proAreaResposta === a.id ? "#1F3A3D" : cores.card, color: proAreaResposta === a.id ? "white" : cores.text, border: proAreaResposta === a.id ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Gabarito */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: cores.card, borderRadius: 10, border: `2px solid ${cores.cardBorder}`, marginBottom: 16 }}>
+                  <span style={{ fontSize: 14, flex: 1, fontWeight: 500, color: cores.text }}>Incluir gabarito?</span>
+                  <button onClick={() => setProGabarito(!proGabarito)} style={{
+                    width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
+                    background: proGabarito ? "#1F3A3D" : "#C7BFAE", position: "relative", transition: "background 0.2s",
+                  }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 10, background: cores.card, position: "absolute", top: 3, left: proGabarito ? 25 : 3, transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                  </button>
+                </div>
+
+                {proError && <div style={{ color: "#c0392b", fontSize: 13, marginTop: 10 }}>{proError}</div>}
+
+                <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+                  <button onClick={() => setProStep(1)} style={backBtnStyle}>← Voltar</button>
+                  <button onClick={gerarPro} disabled={proLoading}
+                    style={{ ...nextBtnStyle, marginTop: 0, flex: 1, opacity: proLoading ? 0.7 : 1 }}>
+                    {proLoading ? "⏳ Gerando..." : "🚀 Gerar Atividade PRO"}
+                  </button>
+                </div>
+
+                {proLoading && (
+                  <div style={{ textAlign: "center", marginTop: 20, padding: 20, background: cores.card, borderRadius: 12, border: `1px solid ${cores.cardBorder}` }}>
+                    <div style={{ fontSize: 32, marginBottom: 8, animation: "pulse 1.5s infinite" }}>🤖</div>
+                    <div style={{ fontSize: 13, color: cores.textSub }}>{proLoadingMsg}</div>
+                    <style>{`@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {proStep === 3 && proResultado && (
+              <div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
+                  🚀 Atividade PRO gerada!
+                </h2>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                  <span style={{ background: dk ? "#2E3530" : "#E1EDE9", color: dk ? "#7BA896" : "#1F3A3D", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{proAlunoSelecionado?.serie || proSerie}</span>
+                  <span style={{ background: dk ? "#2E2540" : "#f0e8f8", color: dk ? "#B88FD0" : "#5b2580", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{proDisciplina}</span>
+                  <span style={{ background: dk ? "#3A3020" : "#fff7d6", color: dk ? "#D4A84A" : "#7a5700", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{proTema}</span>
+                </div>
+
+                <div style={{ background: "#fff", padding: "28px 24px", borderRadius: 12, border: "1px solid #ddd", color: "#222", boxShadow: dk ? "0 4px 20px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.04)" }}>
+                  <h3 style={{ fontSize: 14, color: "#1F3A3D", marginTop: 0 }}>📖 Leia o texto com atenção:</h3>
+                  <p style={{ lineHeight: 1.7, fontSize: 14 }}>{proResultado.textoBase}</p>
+                  <hr style={{ border: "none", borderTop: "1px solid #ddd", margin: "16px 0" }} />
+
+                  {proResultado.questoes.map((q) => (
+                    <div key={q.numero} style={{ marginBottom: 20 }}>
+                      <p style={{ fontWeight: 700, fontSize: 14 }}>Questão {q.numero}</p>
+                      {proImgsGeradas[q.numero] && (
+                        <img src={`data:${proImgsGeradas[q.numero].mime};base64,${proImgsGeradas[q.numero].data}`}
+                          style={{ maxWidth: 280, borderRadius: 8, border: "1px solid #ddd", margin: "8px 0" }} />
+                      )}
+                      <p style={{ fontSize: 14 }}>{q.enunciado}</p>
+                      {q.alternativas && q.alternativas.map((a, i) => (
+                        <p key={i} style={{ fontSize: 13, marginLeft: 16 }}>{a}</p>
+                      ))}
+                    </div>
+                  ))}
+
+                  {proResultado.gabarito && (
+                    <>
+                      <hr style={{ border: "none", borderTop: "1px solid #ddd", margin: "16px 0" }} />
+                      <h3 style={{ fontSize: 14, color: "#c0392b" }}>📋 Gabarito</h3>
+                      <p style={{ fontSize: 13 }}>
+                        {typeof proResultado.gabarito === "string"
+                          ? proResultado.gabarito
+                          : proResultado.questoes.map((q) => `${q.numero}) ${q.resposta}`).join(" | ")}
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
+                  <button onClick={() => { setProStep(1); setProResultado(null); setProImgsGeradas({}); }} style={backBtnStyle}>← Nova Atividade</button>
+                  <button onClick={baixarWordPro} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>📄 Baixar Word</button>
+                </div>
+                <button onClick={() => { setProStep(2); setProResultado(null); setProImgsGeradas({}); }}
+                  style={{ ...backBtnStyle, width: "100%", marginTop: 10, textAlign: "center", justifyContent: "center" }}>
+                  🔄 Gerar outra versão
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Gerador de Atividades (original) */}
         {pagina === "gerador" && (
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px 40px" }}>
         {step < 4 && (
