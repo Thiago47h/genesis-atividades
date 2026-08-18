@@ -1728,11 +1728,31 @@ ${renderMarkdown(resultado)}
             {error && <div style={{ color: "#c0392b", fontSize: 13, marginTop: 10 }}>{error}</div>}
             <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
               <button onClick={() => setStep(2)} style={backBtnStyle}>← Voltar</button>
-              <button onClick={gerarAtividade} disabled={loading}
+              <button onClick={gerarAtividade} disabled={loading || loteGerando}
                 style={{ ...nextBtnStyle, marginTop: 0, flex: 1, opacity: loading ? 0.7 : 1 }}>
                 {loading ? "⏳ Gerando atividade..." : "✨ Gerar Atividade"}
               </button>
             </div>
+
+            {/* Gerar em lote */}
+            {alunosLote.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 12, color: cores.textSub, marginBottom: 8 }}>
+                  🚀 {alunosLote.length} aluno(s) selecionado(s) no lote
+                  {loteGerando && ` — ${lotePorcentagem}%`}
+                </div>
+                {loteGerando && (
+                  <div style={{ height: 6, borderRadius: 3, background: cores.cardBorder, marginBottom: 8 }}>
+                    <div style={{ height: 6, borderRadius: 3, background: "#1F3A3D", width: `${lotePorcentagem}%`, transition: "width 0.3s" }} />
+                  </div>
+                )}
+                <button onClick={gerarEmLote} disabled={loading || loteGerando}
+                  style={{ ...nextBtnStyle, marginTop: 0, background: "#1F3A3D", color: "#fff", opacity: loteGerando ? 0.7 : 1 }}>
+                  {loteGerando ? `⏳ Gerando... ${lotePorcentagem}%` : `🚀 Gerar para ${alunosLote.length} alunos`}
+                </button>
+              </div>
+            )}
+
             {loading && (
               <div style={{ textAlign: "center", marginTop: 20, padding: 20, background: cores.card, borderRadius: 12, border: `1px solid ${cores.cardBorder}` }}>
                 <div style={{ fontSize: 32, marginBottom: 8, animation: "pulse 1.5s infinite" }}>🤖</div>
