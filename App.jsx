@@ -555,32 +555,20 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       if (questoesComImagem.length > 0) {
         setProLoadingMsg(`Gerando ${questoesComImagem.length} imagem(ns)...`);
 
-        const estiloTexto = {
-          "didatica": "educational illustration, clean lines, white background, no text",
-          "infantil": "colorful children cartoon illustration, cheerful, white background",
-          "realista": "realistic educational photo, high quality, clean background",
-          "colorir": "black line drawing for coloring, no fill, simple lines, white background",
-          "esquema": "educational diagram, arrows, labels, white background",
-          "automatico": "clear educational illustration, white background",
-        };
-
         for (const q of questoesComImagem) {
           try {
             setProLoadingMsg(`Gerando imagem da questão ${q.numero}...`);
-            const promptImg = `${estiloTexto[proEstiloImagem] || estiloTexto["automatico"]}, ${q.promptImagem}, suitable for elementary school`;
-            const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptImg)}?width=512&height=512&nologo=true`;
+            const imgResponse = await fetch("/api/gerar-imagem", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ prompt: q.promptImagem, estilo: proEstiloImagem }),
+            });
+            const imgData = await imgResponse.json();
 
-            const imgResponse = await fetch(imgUrl);
-            if (imgResponse.ok) {
-              const blob = await imgResponse.blob();
-              const base64 = await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result.split(",")[1]);
-                reader.readAsDataURL(blob);
-              });
+            if (imgResponse.ok && imgData.image) {
               setProImgsGeradas((prev) => ({
                 ...prev,
-                [q.numero]: { data: base64, mime: "image/jpeg", url: imgUrl },
+                [q.numero]: { data: imgData.image, mime: imgData.mimeType || "image/png" },
               }));
             }
           } catch (e) {
