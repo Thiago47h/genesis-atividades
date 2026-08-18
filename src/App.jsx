@@ -568,7 +568,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
             if (imgResponse.ok && imgData.image) {
               setProImgsGeradas((prev) => ({
                 ...prev,
-                [q.numero]: { data: imgData.image, mime: imgData.mimeType },
+                [q.numero]: { data: imgData.image, mime: imgData.mimeType || "image/png" },
               }));
             }
           } catch (e) {
