@@ -14,7 +14,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Chave da API do Gemini não configurada." });
   }
 
-  // Adicionar estilo ao prompt
   const estiloTexto = {
     "didatica": "Ilustração didática educacional, traços limpos, fundo branco, sem texto na imagem",
     "infantil": "Ilustração infantil colorida, estilo cartoon educacional, alegre, fundo branco",
@@ -28,19 +27,18 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent?key=${geminiKey}`,
+      "https://generativelanguage.googleapis.com/v1beta/interactions",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": geminiKey,
+        },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: promptFinal }],
-            },
+          model: "gemini-3.1-flash-image",
+          input: [
+            { type: "text", text: promptFinal }
           ],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"],
-          },
         }),
       }
     );
@@ -48,23 +46,42 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Erro Gemini:", data);
+      console.error("Erro Gemini:", JSON.stringify(data));
       return res.status(response.status).json({
         error: data?.error?.message || "Erro na API do Gemini.",
       });
     }
 
-    // Extrair imagem da resposta
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-    const imagePart = parts.find((p) => p.inlineData);
+    let imageData = null;
+    let mimeType = "image/png";
 
-    if (!imagePart) {
+    if (data.output_image) {
+      imageData = data.output_image.data;
+      mimeType = data.output_image.mime_type || "image/png";
+    }
+
+    if (!imageData && data.steps) {
+      for (const step of data.steps) {
+        if (step.type === "model_output" && step.content) {
+          for (const block of step.content) {
+            if (block.type === "image" && block.data) {
+              imageData = block.data;
+              mimeType = block.mime_type || "image/png";
+              break;
+            }
+          }
+        }
+        if (imageData) break;
+      }
+    }
+
+    if (!imageData) {
       return res.status(500).json({ error: "O Gemini não retornou imagem." });
     }
 
     return res.status(200).json({
-      image: imagePart.inlineData.data,
-      mimeType: imagePart.inlineData.mimeType || "image/png",
+      image: imageData,
+      mimeType: mimeType,
     });
   } catch (error) {
     console.error("Erro interno gerar-imagem:", error);
