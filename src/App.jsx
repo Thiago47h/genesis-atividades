@@ -1680,7 +1680,9 @@ ${renderMarkdown(resultado)}
               </div>
             )}
 
-            {/* Necessidades do aluno */}
+            {/* Necessidades do aluno — só no modo individual */}
+            {alunosLote.length === 0 && (
+            <>
             <label style={{ ...labelStyle, marginTop: 20 }}>Necessidades do aluno (opcional)</label>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {[
@@ -1736,14 +1738,18 @@ ${renderMarkdown(resultado)}
                 />
               </div>
             )}
+            </>
+            )}
 
             {error && <div style={{ color: "#c0392b", fontSize: 13, marginTop: 10 }}>{error}</div>}
             <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
               <button onClick={() => setStep(2)} style={backBtnStyle}>← Voltar</button>
-              <button onClick={gerarAtividade} disabled={loading || loteGerando}
-                style={{ ...nextBtnStyle, marginTop: 0, flex: 1, opacity: loading ? 0.7 : 1 }}>
-                {loading ? "⏳ Gerando atividade..." : "✨ Gerar Atividade"}
-              </button>
+              {alunosLote.length === 0 && (
+                <button onClick={gerarAtividade} disabled={loading || loteGerando}
+                  style={{ ...nextBtnStyle, marginTop: 0, flex: 1, opacity: loading ? 0.7 : 1 }}>
+                  {loading ? "⏳ Gerando atividade..." : "✨ Gerar Atividade"}
+                </button>
+              )}
             </div>
 
             {/* Gerar em lote */}
