@@ -1,4 +1,13 @@
 export default async function handler(req, res) {
+  // CORS
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido." });
   }
@@ -6,87 +15,90 @@ export default async function handler(req, res) {
   const { prompt, estilo } = req.body || {};
 
   if (!prompt) {
-    return res.status(400).json({ error: "O prompt da imagem não foi enviado." });
+    return res.status(400).json({ error: "Prompt não enviado." });
   }
 
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!geminiKey) {
-    return res.status(500).json({ error: "Chave da API do Gemini não configurada." });
+    return res.status(500).json({ error: "GEMINI_API_KEY não configurada." });
   }
 
   const estiloTexto = {
-    "didatica": "Ilustração didática educacional, traços limpos, fundo branco, sem texto na imagem",
-    "infantil": "Ilustração infantil colorida, estilo cartoon educacional, alegre, fundo branco",
-    "realista": "Imagem realista fotográfica educacional, alta qualidade, fundo limpo",
-    "colorir": "Desenho em linhas pretas para colorir, sem preenchimento, traços simples, fundo branco",
-    "esquema": "Esquema educacional técnico, diagrama didático, setas, labels, fundo branco",
-    "automatico": "Ilustração educacional clara e didática, fundo branco",
+    "didatica": "Educational illustration, clean lines, white background, no text",
+    "infantil": "Colorful children cartoon illustration, cheerful, white background",
+    "realista": "Realistic educational photo, high quality, clean background",
+    "colorir": "Black line drawing for coloring, no fill, simple lines, white background",
+    "esquema": "Educational diagram, arrows, labels, white background",
+    "automatico": "Clear educational illustration, white background",
   };
 
-  const promptFinal = `${estiloTexto[estilo] || estiloTexto["automatico"]}. ${prompt}. A imagem deve ser adequada para atividades escolares de ensino fundamental.`;
+  const promptFinal = `${estiloTexto[estilo] || estiloTexto["automatico"]}. ${prompt}`;
+  const erros = [];
 
+  // Tentativa 1: generateContent
   try {
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/interactions",
+    const r1 = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": geminiKey,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "gemini-3.1-flash-image",
-          input: [
-            { type: "text", text: promptFinal }
-          ],
+          contents: [{ parts: [{ text: `Generate an image: ${promptFinal}` }] }],
+          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
         }),
       }
     );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Erro Gemini:", JSON.stringify(data));
-      return res.status(response.status).json({
-        error: data?.error?.message || "Erro na API do Gemini.",
-      });
+    const d1 = await r1.json();
+    if (r1.ok) {
+      const parts = d1?.candidates?.[0]?.content?.parts || [];
+      const img = parts.find((p) => p.inlineData);
+      if (img) {
+        return res.status(200).json({ image: img.inlineData.data, mimeType: img.inlineData.mimeType || "image/png" });
+      }
+      erros.push("T1: sem imagem na resposta");
+    } else {
+      erros.push("T1: " + (d1?.error?.message || r1.status));
     }
+  } catch (e) {
+    erros.push("T1: " + e.message);
+  }
 
-    let imageData = null;
-    let mimeType = "image/png";
-
-    if (data.output_image) {
-      imageData = data.output_image.data;
-      mimeType = data.output_image.mime_type || "image/png";
-    }
-
-    if (!imageData && data.steps) {
-      for (const step of data.steps) {
-        if (step.type === "model_output" && step.content) {
-          for (const block of step.content) {
-            if (block.type === "image" && block.data) {
-              imageData = block.data;
-              mimeType = block.mime_type || "image/png";
-              break;
+  // Tentativa 2: Interactions API
+  try {
+    const r2 = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/interactions",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
+        body: JSON.stringify({
+          model: "gemini-3.1-flash-image",
+          input: [{ type: "text", text: promptFinal }],
+        }),
+      }
+    );
+    const d2 = await r2.json();
+    if (r2.ok) {
+      if (d2.output_image) {
+        return res.status(200).json({ image: d2.output_image.data, mimeType: d2.output_image.mime_type || "image/png" });
+      }
+      if (d2.steps) {
+        for (const step of d2.steps) {
+          if (step.content) {
+            for (const block of step.content) {
+              if (block.type === "image" && block.data) {
+                return res.status(200).json({ image: block.data, mimeType: block.mime_type || "image/png" });
+              }
             }
           }
         }
-        if (imageData) break;
       }
+      erros.push("T2: sem imagem");
+    } else {
+      erros.push("T2: " + (d2?.error?.message || r2.status));
     }
-
-    if (!imageData) {
-      return res.status(500).json({ error: "O Gemini não retornou imagem." });
-    }
-
-    return res.status(200).json({
-      image: imageData,
-      mimeType: mimeType,
-    });
-  } catch (error) {
-    console.error("Erro interno gerar-imagem:", error);
-    return res.status(500).json({
-      error: error?.message || "Erro interno ao gerar imagem.",
-    });
+  } catch (e) {
+    erros.push("T2: " + e.message);
   }
+
+  return res.status(500).json({ error: "Falhou: " + erros.join(" | ") });
 }
