@@ -1,27 +1,15 @@
 export default async function handler(req, res) {
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método não permitido." });
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Método não permitido." });
 
   const { prompt, estilo } = req.body || {};
+  if (!prompt) return res.status(400).json({ error: "Prompt não enviado." });
 
-  if (!prompt) {
-    return res.status(400).json({ error: "Prompt não enviado." });
-  }
-
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) {
-    return res.status(500).json({ error: "GEMINI_API_KEY não configurada." });
-  }
+  const geminiKey = process.env.GEMINI_API_KEY || "AQ.Ab8RN6K_R0hvnP3DR819LO0XGU5e-eRIZu-4AZ2fwHvufZ3CKg";
 
   const estiloTexto = {
     "didatica": "Educational illustration, clean lines, white background, no text",
