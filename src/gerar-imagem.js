@@ -40,7 +40,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       return res.status(500).json({
-        error: "Gemini erro: " + (data?.error?.message || JSON.stringify(data).substring(0, 300)),
+        error: "Gemini: " + (data?.error?.message || JSON.stringify(data).substring(0, 300)),
       });
     }
 
