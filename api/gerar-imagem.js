@@ -25,13 +25,13 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${geminiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image-001:generateContent?key=${geminiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          instances: [{ prompt: promptFinal }],
-          parameters: { sampleCount: 1, aspectRatio: "1:1" },
+          contents: [{ parts: [{ text: `Generate an image: ${promptFinal}` }] }],
+          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
         }),
       }
     );
@@ -40,19 +40,21 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       return res.status(500).json({
-        error: "Imagen: " + (data?.error?.message || JSON.stringify(data).substring(0, 300)),
+        error: "Gemini: " + (data?.error?.message || JSON.stringify(data).substring(0, 300)),
       });
     }
 
-    const img = data?.predictions?.[0];
-    if (img?.bytesBase64Encoded) {
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const img = parts.find((p) => p.inlineData);
+
+    if (img) {
       return res.status(200).json({
-        image: img.bytesBase64Encoded,
-        mimeType: img.mimeType || "image/png",
+        image: img.inlineData.data,
+        mimeType: img.inlineData.mimeType || "image/png",
       });
     }
 
-    return res.status(500).json({ error: "Imagen respondeu sem imagem." });
+    return res.status(500).json({ error: "Gemini respondeu sem imagem." });
   } catch (error) {
     return res.status(500).json({ error: "Erro: " + error.message });
   }
