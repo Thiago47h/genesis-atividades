@@ -506,9 +506,8 @@ ${proNecessidades.length > 0 ? `ADAPTAÇÕES: ${proNecessidades.join(", ")}` : "
 REGRAS:
 1. Comece com um TEXTO BASE sobre o tema que contenha as respostas das questões.
 2. Adapte a linguagem à série.
-3. Se precisaImagem=true, escreva um promptImagem detalhado para gerar a imagem.
-4. NÃO coloque imagem em todas as questões — só onde faz diferença pedagógica.
-5. Respeite o máximo de ${maxImgs} imagens.
+3. IMAGENS: Você DEVE marcar EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado em inglês. As outras devem ter "precisaImagem": false e "promptImagem": null.
+4. Respeite EXATAMENTE o número de ${maxImgs} imagens.
 
 Responda APENAS com JSON válido, sem markdown, neste formato:
 {
@@ -544,9 +543,29 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       });
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error);
+      if (!response.ok) throw new Error(data.error || "Erro na API");
 
-      const resultado = data.json || JSON.parse(data.text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
+      let resultado;
+      try {
+        if (data.json) {
+          resultado = data.json;
+        } else {
+          let text = data.text || "";
+          text = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+          const start = text.indexOf("{");
+          const end = text.lastIndexOf("}");
+          if (start !== -1 && end !== -1) text = text.substring(start, end + 1);
+          resultado = JSON.parse(text);
+        }
+      } catch (parseErr) {
+        console.error("Erro parsing JSON PRO:", data.text?.substring(0, 500));
+        throw new Error("A IA retornou um formato inválido. Tente gerar novamente.");
+      }
+
+      if (!resultado.questoes || !Array.isArray(resultado.questoes)) {
+        throw new Error("A IA não retornou questões válidas. Tente novamente.");
+      }
+
       setProResultado(resultado);
 
       // Gerar imagens
@@ -578,20 +597,22 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       }
 
       // Salvar no Supabase
-      await supabase.from("atividades").insert({
-        aluno_id: proAlunoSelecionado?.id || null,
-        aluno_nome: proAlunoSelecionado?.nome || null,
-        disciplina: proDisciplina,
-        serie: proAlunoSelecionado?.serie || proSerie,
-        tema: proTema,
-        tipos_questao: { tipo: proTipoAtividade, pro: true },
-        conteudo: JSON.stringify(resultado),
-      });
-      carregarAtividades();
+      try {
+        await supabase.from("atividades").insert({
+          aluno_id: proAlunoSelecionado?.id || null,
+          aluno_nome: proAlunoSelecionado?.nome || null,
+          disciplina: proDisciplina,
+          serie: proAlunoSelecionado?.serie || proSerie,
+          tema: proTema,
+          tipos_questao: { tipo: proTipoAtividade, pro: true },
+          conteudo: JSON.stringify(resultado),
+        });
+        carregarAtividades();
+      } catch (e) {}
 
       setProStep(3);
     } catch (e) {
-      setProError("Erro na geração. Tente novamente.");
+      setProError(e.message || "Erro na geração. Tente novamente.");
     } finally {
       setProLoading(false);
       setProLoadingMsg("");
@@ -1316,10 +1337,29 @@ ${renderMarkdown(resultado)}
                       maxHeight: 60, overflow: "hidden",
                       marginBottom: 12,
                     }}>
-                      {ativ.conteudo?.substring(0, 200)}...
+                      {(() => {
+                        try {
+                          const parsed = JSON.parse(ativ.conteudo);
+                          if (parsed.textoBase) return parsed.textoBase.substring(0, 200) + "...";
+                        } catch (e) {}
+                        return (ativ.conteudo || "").substring(0, 200) + "...";
+                      })()}
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                       <button onClick={() => {
+                        try {
+                          const parsed = JSON.parse(ativ.conteudo);
+                          if (parsed.textoBase) {
+                            setProResultado(parsed);
+                            setProImgsGeradas({});
+                            setProStep(3);
+                            setProDisciplina(ativ.disciplina);
+                            setProSerie(ativ.serie);
+                            setProTema(ativ.tema);
+                            setPagina("pro");
+                            return;
+                          }
+                        } catch (e) {}
                         setResultado(ativ.conteudo);
                         setDisciplina(ativ.disciplina);
                         setSerie(ativ.serie);
@@ -1331,6 +1371,13 @@ ${renderMarkdown(resultado)}
                         background: cores.card, color: cores.text, fontSize: 12, fontWeight: 600,
                         cursor: "pointer",
                       }}>👁️ Ver</button>
+                      <span style={{
+                        padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600,
+                        background: (() => { try { JSON.parse(ativ.conteudo); return "#C1683C"; } catch(e) { return cores.cardBorder; } })(),
+                        color: (() => { try { JSON.parse(ativ.conteudo); return "white"; } catch(e) { return cores.textSub; } })(),
+                      }}>
+                        {(() => { try { JSON.parse(ativ.conteudo); return "PRO"; } catch(e) { return "Normal"; } })()}
+                      </span>
                       <button onClick={() => gerarRecadoHistorico(ativ)}
                         disabled={recadoCarregando === ativ.id}
                         style={{
@@ -1547,6 +1594,24 @@ ${renderMarkdown(resultado)}
                   </button>
                 </div>
 
+                {/* Adaptações */}
+                {!proAlunoSelecionado && (
+                  <>
+                    <label style={labelStyle}>Adaptações (opcional)</label>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+                      {["Dificuldade de leitura", "TDAH", "TEA", "Deficiência intelectual", "Alfabetização em processo", "Comandos mais curtos"].map((nec) => {
+                        const sel = proNecessidades.includes(nec);
+                        return (
+                          <button key={nec} onClick={() => setProNecessidades((prev) => sel ? prev.filter((n) => n !== nec) : [...prev, nec])}
+                            style={{ ...chipStyle, fontSize: 11, padding: "6px 10px", background: sel ? "#1F3A3D" : cores.card, color: sel ? "white" : cores.text, border: sel ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
+                            {nec}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
                 {proError && <div style={{ color: "#c0392b", fontSize: 13, marginTop: 10 }}>{proError}</div>}
 
                 <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
@@ -1601,11 +1666,16 @@ ${renderMarkdown(resultado)}
                     <>
                       <hr style={{ border: "none", borderTop: "1px solid #ddd", margin: "16px 0" }} />
                       <h3 style={{ fontSize: 14, color: "#c0392b" }}>📋 Gabarito</h3>
-                      <p style={{ fontSize: 13 }}>
+                      <div style={{ fontSize: 13, lineHeight: 1.8 }}>
                         {typeof proResultado.gabarito === "string"
-                          ? proResultado.gabarito
-                          : proResultado.questoes.map((q) => `${q.numero}) ${q.resposta}`).join(" | ")}
-                      </p>
+                          ? proResultado.gabarito.split("\n").map((l, i) => <p key={i} style={{ margin: "2px 0" }}>{l}</p>)
+                          : Array.isArray(proResultado.gabarito)
+                            ? proResultado.gabarito.map((g, i) => <p key={i} style={{ margin: "2px 0" }}>{g}</p>)
+                            : proResultado.questoes?.map((q) => (
+                              <p key={q.numero} style={{ margin: "2px 0" }}><strong>{q.numero})</strong> {q.resposta}</p>
+                            ))
+                        }
+                      </div>
                     </>
                   )}
                 </div>
