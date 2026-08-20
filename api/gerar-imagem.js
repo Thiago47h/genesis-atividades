@@ -13,15 +13,15 @@ export default async function handler(req, res) {
   if (!geminiKey) return res.status(500).json({ error: "GEMINI_API_KEY não configurada." });
 
   const estiloTexto = {
-    "didatica": "Educational illustration, clean lines, white background, no text in image",
-    "infantil": "Colorful children cartoon illustration, cheerful, white background",
-    "realista": "Realistic educational photo, high quality, clean background",
-    "colorir": "Black line drawing for coloring, no fill, simple lines, white background",
-    "esquema": "Educational diagram, arrows, labels, white background",
-    "automatico": "Clear educational illustration, white background",
+    "didatica": "Ilustração didática educacional, traços limpos, fundo branco, sem texto na imagem",
+    "infantil": "Ilustração infantil colorida, estilo cartoon educacional, alegre, fundo branco",
+    "realista": "Foto realista educacional, alta qualidade, fundo limpo",
+    "colorir": "Desenho em linhas pretas para colorir, sem preenchimento, traços simples, fundo branco",
+    "esquema": "Esquema educacional técnico, diagrama didático, setas, labels em português, fundo branco",
+    "automatico": "Ilustração educacional clara e didática, fundo branco",
   };
 
-  const promptFinal = `${estiloTexto[estilo] || estiloTexto["automatico"]}. ${prompt}. Suitable for elementary school activities.`;
+  const promptFinal = `${estiloTexto[estilo] || estiloTexto["automatico"]}. ${prompt}. Todos os textos, labels e legendas devem estar em PORTUGUÊS do Brasil. Adequado para atividades escolares do ensino fundamental.`;
 
   try {
     const response = await fetch(
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `Generate an image: ${promptFinal}` }] }],
+          contents: [{ parts: [{ text: `Gere uma imagem: ${promptFinal}` }] }],
           generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
         }),
       }
