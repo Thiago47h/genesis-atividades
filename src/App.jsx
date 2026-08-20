@@ -571,6 +571,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
 
       // Gerar imagens
       const questoesComImagem = resultado.questoes.filter((q) => q.precisaImagem && q.promptImagem);
+      const imagensColetadas = {};
 
       if (questoesComImagem.length > 0) {
         setProLoadingMsg(`Gerando ${questoesComImagem.length} imagem(ns)...`);
@@ -586,15 +587,11 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
             const imgData = await imgResponse.json();
 
             if (imgResponse.ok && imgData.image) {
-              setProImgsGeradas((prev) => ({
-                ...prev,
-                [q.numero]: { data: imgData.image, mime: imgData.mimeType || "image/png" },
-              }));
+              imagensColetadas[q.numero] = { data: imgData.image, mime: imgData.mimeType || "image/png" };
             }
-          } catch (e) {
-            // Imagem falhou — continua sem ela
-          }
+          } catch (e) {}
         }
+        setProImgsGeradas(imagensColetadas);
       }
 
       // Salvar no Supabase (com imagens)
@@ -607,7 +604,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
           tema: proTema,
           tipos_questao: { tipo: proTipoAtividade, pro: true },
           conteudo: JSON.stringify(resultado),
-          imagens: proImgsGeradas,
+          imagens: imagensColetadas,
         });
         carregarAtividades();
       } catch (e) {}
