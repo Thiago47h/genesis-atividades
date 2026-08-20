@@ -597,7 +597,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
         }
       }
 
-      // Salvar no Supabase
+      // Salvar no Supabase (com imagens)
       try {
         await supabase.from("atividades").insert({
           aluno_id: proAlunoSelecionado?.id || null,
@@ -607,6 +607,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
           tema: proTema,
           tipos_questao: { tipo: proTipoAtividade, pro: true },
           conteudo: JSON.stringify(resultado),
+          imagens: proImgsGeradas,
         });
         carregarAtividades();
       } catch (e) {}
@@ -1352,12 +1353,12 @@ ${renderMarkdown(resultado)}
                       })()}
                     </div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                      <button onClick={() => {
+                      <button onClick={async () => {
                         try {
                           const parsed = JSON.parse(ativ.conteudo);
                           if (parsed.textoBase) {
                             setProResultado(parsed);
-                            setProImgsGeradas({});
+                            setProImgsGeradas(ativ.imagens || {});
                             setProStep(3);
                             setProDisciplina(ativ.disciplina);
                             setProSerie(ativ.serie);
