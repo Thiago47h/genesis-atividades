@@ -506,7 +506,7 @@ ${proNecessidades.length > 0 ? `ADAPTAÇÕES: ${proNecessidades.join(", ")}` : "
 REGRAS:
 1. Comece com um TEXTO BASE sobre o tema que contenha as respostas das questões.
 2. Adapte a linguagem à série.
-3. IMAGENS: Você DEVE marcar EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado em inglês. As outras devem ter "precisaImagem": false e "promptImagem": null.
+3. IMAGENS: Você DEVE marcar EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS descrevendo a imagem a ser gerada. Inclua "com textos e labels em português" no prompt. As outras devem ter "precisaImagem": false e "promptImagem": null.
 4. Respeite EXATAMENTE o número de ${maxImgs} imagens.
 
 Responda APENAS com JSON válido, sem markdown, neste formato:
