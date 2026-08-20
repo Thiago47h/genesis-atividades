@@ -532,7 +532,8 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       "resposta": "estrela"
     }
   ],
-  "gabarito": ${proGabarito ? '"texto do gabarito completo"' : "null"}
+  "gabarito": ${proGabarito ? '"texto do gabarito completo"' : "null"},
+  "dicasProfessor": "Seção com dicas e observações para o professor sobre como aplicar esta atividade, adaptações sugeridas e pontos de atenção."
 }`;
 
     try {
@@ -650,6 +651,10 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       }
 
       let gabaritoHtml = "";
+      let dicasHtml = "";
+      if (r.dicasProfessor) {
+        dicasHtml = `<hr/><h2 style="font-size:14pt; color:#1F3A3D;">💡 Dicas e Observações para o Professor</h2><p style="background:#F5F0E5; padding:10px; border-radius:4px;">${r.dicasProfessor}</p>`;
+      }
       if (r.gabarito) {
         gabaritoHtml = `<hr/><h2 style="font-size:14pt; color:#c0392b;">Gabarito do Professor</h2><p>${typeof r.gabarito === "string" ? r.gabarito : r.questoes.map((q) => `${q.numero}) ${q.resposta}`).join("<br/>")}</p>`;
       }
@@ -676,6 +681,7 @@ h2{font-size:14pt;margin-top:20px}h3{font-size:12pt;margin-top:16px}hr{border:0;
 <h2>📖 Leia o texto com atenção:</h2>
 <p>${r.textoBase}</p><hr/>
 ${questoesHtml}
+${dicasHtml}
 ${gabaritoHtml}
 </body></html>`;
 
@@ -1662,6 +1668,16 @@ ${renderMarkdown(resultado)}
                     </div>
                   ))}
 
+                  {proResultado.dicasProfessor && (
+                    <>
+                      <hr style={{ border: "none", borderTop: "1px solid #ddd", margin: "16px 0" }} />
+                      <h3 style={{ fontSize: 14, color: "#1F3A3D" }}>💡 Dicas e Observações para o Professor</h3>
+                      <div style={{ fontSize: 13, lineHeight: 1.7, background: "#F5F0E5", padding: "12px 16px", borderRadius: 8, border: "1px solid #E2DACB" }}>
+                        {proResultado.dicasProfessor.split("\n").map((l, i) => <p key={i} style={{ margin: "4px 0" }}>{l}</p>)}
+                      </div>
+                    </>
+                  )}
+
                   {proResultado.gabarito && (
                     <>
                       <hr style={{ border: "none", borderTop: "1px solid #ddd", margin: "16px 0" }} />
@@ -1684,6 +1700,33 @@ ${renderMarkdown(resultado)}
                   <button onClick={() => { setProStep(1); setProResultado(null); setProImgsGeradas({}); }} style={backBtnStyle}>← Nova Atividade</button>
                   <button onClick={baixarWordPro} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>📄 Baixar Word</button>
                 </div>
+                {Object.keys(proImgsGeradas).length === 0 && proResultado.questoes?.some((q) => q.precisaImagem) && (
+                  <button onClick={async () => {
+                    const questoesComImagem = proResultado.questoes.filter((q) => q.precisaImagem && q.promptImagem);
+                    if (questoesComImagem.length === 0) return;
+                    setProLoading(true);
+                    setProLoadingMsg("Regerando imagens...");
+                    for (const q of questoesComImagem) {
+                      try {
+                        setProLoadingMsg(`Gerando imagem da questão ${q.numero}...`);
+                        const imgResponse = await fetch("/api/gerar-imagem", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ prompt: q.promptImagem, estilo: proEstiloImagem }),
+                        });
+                        const imgData = await imgResponse.json();
+                        if (imgResponse.ok && imgData.image) {
+                          setProImgsGeradas((prev) => ({ ...prev, [q.numero]: { data: imgData.image, mime: imgData.mimeType || "image/png" } }));
+                        }
+                      } catch (e) {}
+                    }
+                    setProLoading(false);
+                    setProLoadingMsg("");
+                  }} disabled={proLoading}
+                    style={{ ...backBtnStyle, width: "100%", marginTop: 10, justifyContent: "center", background: "#C1683C", color: "white", border: "none" }}>
+                    {proLoading ? "⏳ Gerando imagens..." : "🖼️ Gerar imagens desta atividade"}
+                  </button>
+                )}
                 <button onClick={() => { setProStep(2); setProResultado(null); setProImgsGeradas({}); }}
                   style={{ ...backBtnStyle, width: "100%", marginTop: 10, textAlign: "center", justifyContent: "center" }}>
                   🔄 Gerar outra versão
