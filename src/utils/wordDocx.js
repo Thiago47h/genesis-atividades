@@ -221,7 +221,7 @@ async function createHeaderImage({ logoBytes, title, subtitle = "", showGrade = 
   const rowHeight = 104;
   const dateWidth = 500;
   const classWidth = 350;
-  drawField(context, "Data: ____/____/________", left, rowY, dateWidth, rowHeight);
+  drawField(context, "Data:", left, rowY, dateWidth, rowHeight);
   drawField(context, "Turma:", left + dateWidth + gap, rowY, classWidth, rowHeight);
   drawField(context, "Prof.ª:", left + dateWidth + classWidth + gap * 2, rowY, right - (left + dateWidth + classWidth + gap * 2), rowHeight);
 
@@ -348,7 +348,7 @@ export async function downloadStandardActivityDocx({
   const logoBytes = await fetchImageBytes("/logo-genesis.png");
   const header = await createHeader({
       logoBytes,
-      title: modoProva ? `Prova de ${disciplina}` : `Atividade Adaptada de ${disciplina}`,
+      title: modoProva ? `Prova de ${disciplina}` : `Atividade de ${disciplina}`,
       subtitle: tema,
       showGrade: modoProva,
     });
@@ -377,7 +377,7 @@ export async function downloadProActivityDocx({
   includeTeacherContent = true,
 }) {
   const logoBytes = await fetchImageBytes("/logo-genesis.png");
-  const header = await createHeader({ logoBytes, title: `Atividade PRO de ${disciplina}`, subtitle: tema });
+  const header = await createHeader({ logoBytes, title: `Atividade de ${disciplina}`, subtitle: tema });
   const children = [
     ...header,
     new Paragraph({
