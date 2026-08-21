@@ -5,6 +5,7 @@ import { SERIES_OPTIONS, DISCIPLINAS, TIPOS_QUESTAO, TEMAS_SUGERIDOS } from "./c
 import { buildPrompt } from "./prompts/buildActivityPrompt.js";
 import { renderMarkdown } from "./utils/markdown.js";
 import { buildWordHeader } from "./utils/wordHeader.js";
+import { downloadProActivityDocx, downloadStandardActivityDocx } from "./utils/wordDocx.js";
 
 export default function App() {
   // Autenticação
@@ -553,71 +554,19 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
     }
   };
 
-  const baixarWordPro = async () => {
+  const baixarWordPro = async (includeTeacherContent = true) => {
     try {
-      const logoResponse = await fetch("/logo-genesis.png");
-      const logoBlob = await logoResponse.blob();
-      const logoDataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(logoBlob);
+      await downloadProActivityDocx({
+        resultado: proResultado,
+        imagens: proImgsGeradas,
+        disciplina: proDisciplina,
+        tema: proTema,
+        tiposArea: proTiposArea,
+        includeTeacherContent,
       });
-
-      const r = proResultado;
-      let questoesHtml = "";
-
-      for (const q of r.questoes) {
-        const img = proImgsGeradas[q.numero];
-        questoesHtml += `<h3 style="margin-top:20px; font-size:12pt;">Questão ${q.numero}</h3>`;
-        if (img) {
-          questoesHtml += `<p><img src="data:${img.mime};base64,${img.data}" width="300" style="border:1px solid #ddd; border-radius:4px;" /></p>`;
-        }
-        questoesHtml += `<p>${q.enunciado}</p>`;
-        if (q.alternativas) {
-          questoesHtml += q.alternativas.map((a) => `<p style="margin-left:20px;">${a}</p>`).join("");
-        }
-        const areaQuestao = q.areaResposta || proTiposArea[q.tipo] || proAreaResposta;
-        const areaH = areaQuestao === "pequena" ? 30 : areaQuestao === "grande" || areaQuestao === "quadro" ? 100 : areaQuestao === "linhas" ? 75 : 60;
-        if (!q.alternativas) {
-          questoesHtml += `<div style="border:1px solid #ccc; min-height:${areaH}px; margin:10px 0; border-radius:4px;"></div>`;
-        }
-      }
-
-      let gabaritoHtml = "";
-      let dicasHtml = "";
-      if (r.dicasProfessor) {
-        dicasHtml = `<hr/><h2 style="font-size:14pt; color:#1F3A3D;">💡 Dicas e Observações para o Professor</h2><p style="background:#F5F0E5; padding:10px; border-radius:4px;">${r.dicasProfessor}</p>`;
-      }
-      if (r.gabarito) {
-        gabaritoHtml = `<hr/><h2 style="font-size:14pt; color:#c0392b;">Gabarito do Professor</h2><p>${typeof r.gabarito === "string" ? r.gabarito : r.questoes.map((q) => `${q.numero}) ${q.resposta}`).join("<br/>")}</p>`;
-      }
-
-      const doc = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="UTF-8"><style>
-@page{size:A4;margin:1.5cm}body{font-family:Arial,sans-serif;font-size:12pt;line-height:1.6;color:#222}
-h2{font-size:14pt;margin-top:20px}h3{font-size:12pt;margin-top:16px}hr{border:0;border-top:1px solid #999;margin:14px 0}
-</style></head><body>
-${buildWordHeader({ logoDataUrl, title: `ATIVIDADE PRO DE ${proDisciplina}`, subtitle: proTema })}
-<h2>📖 Leia o texto com atenção:</h2>
-<p>${r.textoBase}</p><hr/>
-${questoesHtml}
-${dicasHtml}
-${gabaritoHtml}
-</body></html>`;
-
-      const blob = new Blob(["\ufeff", doc], { type: "application/msword;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `atividade-pro-${proDisciplina}-${proTema}.doc`.replace(/\s+/g, "-").toLowerCase();
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
     } catch (e) {
-      setProError("Erro ao gerar Word.");
+      console.error("Erro ao gerar DOCX PRO:", e);
+      setProError("Não foi possível gerar o arquivo DOCX. Tente novamente.");
     }
   };
 
@@ -673,74 +622,22 @@ ${gabaritoHtml}
     </div>`;
 
 
-  const baixarWord = async () => {
+  const baixarWord = async (includeTeacherContent = true) => {
     try {
-      const logoResponse = await fetch("/logo-genesis.png");
-      if (!logoResponse.ok) throw new Error("Logo não encontrado");
-
-      const logoBlob = await logoResponse.blob();
-      const logoDataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(logoBlob);
+      await downloadStandardActivityDocx({
+        resultado,
+        disciplina,
+        tema,
+        modoProva,
+        tempoEstimado,
+        includeTeacherContent,
       });
-
-      const documentoWord = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office"
-      xmlns:w="urn:schemas-microsoft-com:office:word"
-      xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-  <meta charset="UTF-8">
-  <meta name="ProgId" content="Word.Document">
-  <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
-  <style>
-    @page { size: A4; margin: 1.5cm; }
-    body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.6; color: #222; }
-    h2 { font-size: 14pt; margin-top: 20px; margin-bottom: 8px; }
-    h3 { font-size: 12pt; margin-top: 16px; }
-    hr { border: 0; border-top: 1px solid #999; margin: 14px 0; }
-    p { margin: 0 0 8px; }
-  </style>
-</head>
-<body>
-
-${buildWordHeader({
-  logoDataUrl,
-  title: modoProva ? `PROVA DE ${disciplina}` : `ATIVIDADE ADAPTADA DE ${disciplina}`,
-  subtitle: tema,
-  showGrade: modoProva,
-})}
-${modoProva && tempoEstimado ? `<p style="font-size:11pt; text-align:right; color:#555;"><strong>Tempo estimado:</strong> ${tempoEstimado} minutos</p>` : ""}
-
-${renderMarkdown(resultado)}
-
-</body>
-</html>`;
-
-      const blob = new Blob(["\ufeff", documentoWord], {
-        type: "application/msword;charset=utf-8",
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      const nomeSeguro = `${disciplina}-${tema}`
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9-_]+/g, "-")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "")
-        .toLowerCase();
-
-      link.href = url;
-      link.download = `atividade-${nomeSeguro || "genesis"}.doc`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (erro) {
-      setError("Não foi possível gerar o arquivo do Word. Tente novamente.");
+    } catch (e) {
+      console.error("Erro ao gerar DOCX:", e);
+      setError("Não foi possível gerar o arquivo DOCX. Tente novamente.");
     }
   };
+
   const activityStyles = `
     .activity-header{display:grid;grid-template-columns:180px 1fr;border:2px solid #777;border-radius:12px;overflow:hidden;margin-bottom:24px;background:#fff}
     .header-logo-box{grid-row:1 / span 3;display:flex;align-items:center;justify-content:center;padding:10px;border-right:2px solid #777}
@@ -1633,7 +1530,14 @@ ${renderMarkdown(resultado)}
 
                 <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
                   <button onClick={() => { setProStep(1); setProResultado(null); setProImgsGeradas({}); }} style={backBtnStyle}>← Nova Atividade</button>
-                  <button onClick={baixarWordPro} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>📄 Baixar Word</button>
+                  <button onClick={() => baixarWordPro(false)} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>
+                    📄 DOCX do Aluno
+                  </button>
+                  {proGabarito && (
+                    <button onClick={() => baixarWordPro(true)} style={{ ...nextBtnStyle, marginTop: 0, flex: 1, background: "#1F3A3D" }}>
+                      📋 DOCX do Professor
+                    </button>
+                  )}
                 </div>
                 {Object.keys(proImgsGeradas).length === 0 && proResultado.questoes?.some((q) => q.precisaImagem) && (
                   <button onClick={async () => {
@@ -2324,9 +2228,14 @@ ${renderMarkdown(resultado)}
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
               <button onClick={resetar} style={backBtnStyle}>← Nova Atividade</button>
-              <button onClick={baixarWord} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>
-                📄 Baixar no Word
+              <button onClick={() => baixarWord(false)} style={{ ...nextBtnStyle, marginTop: 0, flex: 1 }}>
+                📄 DOCX do Aluno
               </button>
+              {gabarito && (
+                <button onClick={() => baixarWord(true)} style={{ ...nextBtnStyle, marginTop: 0, flex: 1, background: "#1F3A3D" }}>
+                  📋 DOCX do Professor
+                </button>
+              )}
             </div>
             <button onClick={() => { setStep(3); setResultado(""); }}
               style={{ ...backBtnStyle, width: "100%", marginTop: 10, textAlign: "center", justifyContent: "center" }}>
