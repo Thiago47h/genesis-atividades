@@ -4,6 +4,7 @@ import { supabase } from "./supabase.js";
 import { SERIES_OPTIONS, DISCIPLINAS, TIPOS_QUESTAO, TEMAS_SUGERIDOS } from "./constants/education.js";
 import { buildPrompt } from "./prompts/buildActivityPrompt.js";
 import { renderMarkdown } from "./utils/markdown.js";
+import { buildWordHeader } from "./utils/wordHeader.js";
 
 export default function App() {
   // Autenticação
@@ -550,19 +551,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
 @page{size:A4;margin:1.5cm}body{font-family:Arial,sans-serif;font-size:12pt;line-height:1.6;color:#222}
 h2{font-size:14pt;margin-top:20px}h3{font-size:12pt;margin-top:16px}hr{border:0;border-top:1px solid #999;margin:14px 0}
 </style></head><body>
-<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:0">
-<tr><td rowspan="2" width="90" style="border:1px solid #555;text-align:center;vertical-align:middle;padding:6px">
-<img src="${logoDataUrl}" width="55" alt="Logo"/><br/><span style="font-size:6pt;font-weight:bold;color:#555">COLÉGIO<br/>GÊNESIS<br/>LIFE</span></td>
-<td style="border:1px solid #555;text-align:center;vertical-align:middle;padding:6px;font-size:14pt;font-weight:bold">Colégio Genesis Life</td></tr>
-<tr><td style="border:1px solid #555;text-align:center;vertical-align:middle;padding:6px;font-size:11pt">${proDisciplina} - ${proTema}</td></tr></table>
-<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:0">
-<tr><td width="82%" style="border:1px solid #555;padding:6px 10px;font-size:11pt">Nome:</td>
-<td style="border:1px solid #555;padding:6px 10px;font-size:11pt">Nº</td></tr></table>
-<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:16px">
-<tr><td width="30%" style="border:1px solid #555;padding:6px 10px;font-size:11pt">Prof.</td>
-<td width="25%" style="border:1px solid #555;padding:6px 10px;font-size:11pt;text-align:center">____/____/ 2026</td>
-<td width="22%" style="border:1px solid #555;padding:6px 10px;font-size:11pt">Turma:</td>
-<td width="23%" style="border:1px solid #555;padding:6px 10px;font-size:11pt">Nota:</td></tr></table>
+${buildWordHeader({ logoDataUrl, title: `ATIVIDADE PRO DE ${proDisciplina}`, subtitle: proTema })}
 <h2>📖 Leia o texto com atenção:</h2>
 <p>${r.textoBase}</p><hr/>
 ${questoesHtml}
@@ -668,36 +657,12 @@ ${gabaritoHtml}
 </head>
 <body>
 
-<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:0;">
-  <tr>
-    <td rowspan="2" width="90" style="border:1px solid #555; text-align:center; vertical-align:middle; padding:6px;">
-      <img src="${logoDataUrl}" width="55" alt="Logo" /><br/>
-      <span style="font-size:6pt; font-weight:bold; color:#555; letter-spacing:0.5px;">COLÉGIO<br/>GÊNESIS<br/>LIFE</span>
-    </td>
-    <td style="border:1px solid #555; text-align:center; vertical-align:middle; padding:6px; font-size:14pt; font-weight:bold;">
-      Colégio Genesis Life
-    </td>
-  </tr>
-  <tr>
-    <td style="border:1px solid #555; text-align:center; vertical-align:middle; padding:6px; font-size:11pt;">
-      ${modoProva ? `Prova de ${disciplina}` : `Atividade Adaptada de ${disciplina} - ${tema}`}
-    </td>
-  </tr>
-</table>
-<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:0;">
-  <tr>
-    <td width="82%" style="border:1px solid #555; padding:6px 10px; font-size:11pt;">Nome:</td>
-    <td style="border:1px solid #555; padding:6px 10px; font-size:11pt;">Nº</td>
-  </tr>
-</table>
-<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:16px;">
-  <tr>
-    <td width="30%" style="border:1px solid #555; padding:6px 10px; font-size:11pt;">Prof.</td>
-    <td width="25%" style="border:1px solid #555; padding:6px 10px; font-size:11pt; text-align:center;">____/____/ 2026</td>
-    <td width="22%" style="border:1px solid #555; padding:6px 10px; font-size:11pt;">Turma:</td>
-    <td width="23%" style="border:1px solid #555; padding:6px 10px; font-size:11pt;">Nota:</td>
-  </tr>
-</table>
+${buildWordHeader({
+  logoDataUrl,
+  title: modoProva ? `PROVA DE ${disciplina}` : `ATIVIDADE ADAPTADA DE ${disciplina}`,
+  subtitle: tema,
+  showGrade: modoProva,
+})}
 ${modoProva && tempoEstimado ? `<p style="font-size:11pt; text-align:right; color:#555;"><strong>Tempo estimado:</strong> ${tempoEstimado} minutos</p>` : ""}
 
 ${renderMarkdown(resultado)}
