@@ -433,7 +433,13 @@ REGRAS IMPORTANTES:
 1. SEMPRE comece com um TEXTO BASE sobre o tema. Esse texto é o CORAÇÃO da atividade — TODAS as respostas de TODAS as questões devem ser encontradas nele.
 2. Questões de ALTERNATIVAS: respostas que o aluno encontra no texto base. EXATAMENTE 3 opções: A, B e C.
 3. Questões de COMPLETE: frases retiradas ou baseadas no texto base.
-4. Questões de RELACIONE/LIGUE/ASSOCIAÇÃO: informações presentes no texto base.
+4. Questões de RELACIONE/LIGUE/ASSOCIAÇÃO:
+- Retorne "colunaA" e "colunaB" como arrays separados, com 3 a 5 itens cada e a mesma quantidade.
+- A colunaA deve conter itens numerados: "1. ...", "2. ...", "3. ...".
+- A colunaB deve conter itens identificados por letras: "A. ...", "B. ...", "C. ...".
+- EMBARALHE a colunaB. As respostas corretas não podem ficar na mesma linha nem já conectadas.
+- Para esse tipo, use "alternativas": null.
+- Informe as correspondências apenas em "resposta", no formato "1-C, 2-A, 3-B".
 5. NENHUMA questão pode exigir conhecimento que não esteja no texto base (exceto "Desenhe" e criatividade).
 6. Enunciados objetivos, claros e curtos, adequados à faixa etária.
 7. Adapte a linguagem e complexidade à série.
@@ -452,6 +458,8 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       "tipo": "multipla_escolha",
       "enunciado": "texto da questão",
       "areaResposta": "media",
+      "colunaA": null,
+      "colunaB": null,
       "precisaImagem": false,
       "promptImagem": null,
       "alternativas": ["A) ...", "B) ...", "C) ..."],
@@ -462,10 +470,24 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       "tipo": "complete",
       "enunciado": "Complete: O sol é uma ______",
       "areaResposta": "pequena",
+      "colunaA": null,
+      "colunaB": null,
       "precisaImagem": true,
       "promptImagem": "Ilustração didática do sistema solar mostrando o sol no centro, com textos em português, fundo branco",
       "alternativas": null,
       "resposta": "estrela"
+    },
+    {
+      "numero": 3,
+      "tipo": "relacione",
+      "enunciado": "Ligue cada elemento à sua característica.",
+      "areaResposta": "media",
+      "colunaA": ["1. Sol", "2. Terra", "3. Lua"],
+      "colunaB": ["A. Satélite natural", "B. Estrela", "C. Planeta"],
+      "precisaImagem": false,
+      "promptImagem": null,
+      "alternativas": null,
+      "resposta": "1-B, 2-C, 3-A"
     }
   ],
   "gabarito": ${proGabarito ? '"gabarito completo com todas as respostas"' : "null"},
@@ -1487,10 +1509,22 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
                           style={{ maxWidth: 280, borderRadius: 8, border: "1px solid #ddd", margin: "8px 0" }} />
                       )}
                       <p style={{ fontSize: 14 }}>{q.enunciado}</p>
-                      {q.alternativas && q.alternativas.map((a, i) => (
+                      {Array.isArray(q.colunaA) && Array.isArray(q.colunaB) && (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, margin: "12px 0", padding: 14, border: "1px solid #ddd", borderRadius: 8 }}>
+                          <div>
+                            <strong style={{ fontSize: 12 }}>COLUNA A</strong>
+                            {q.colunaA.map((item, i) => <p key={i} style={{ fontSize: 13, margin: "12px 0" }}>{item}</p>)}
+                          </div>
+                          <div>
+                            <strong style={{ fontSize: 12 }}>COLUNA B</strong>
+                            {q.colunaB.map((item, i) => <p key={i} style={{ fontSize: 13, margin: "12px 0" }}>{item}</p>)}
+                          </div>
+                        </div>
+                      )}
+                      {!q.colunaA && q.alternativas && q.alternativas.map((a, i) => (
                         <p key={i} style={{ fontSize: 13, marginLeft: 16 }}>{a}</p>
                       ))}
-                      {!q.alternativas && (
+                      {!q.colunaA && !q.alternativas && (
                         <div style={{
                           minHeight: q.areaResposta === "pequena" ? 30 : q.areaResposta === "grande" || q.areaResposta === "quadro" ? 100 : q.areaResposta === "linhas" ? 75 : 60,
                           border: "1px solid #ccc", borderRadius: 6, marginTop: 10,
