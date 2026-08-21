@@ -111,100 +111,150 @@ function imageType(mime = "image/png") {
   return "png";
 }
 
-function fieldCell(label, width, { align = AlignmentType.LEFT } = {}) {
-  return new TableCell({
-    width: { size: width, type: WidthType.DXA },
-    borders: cellBorders,
-    margins: { top: 120, bottom: 220, left: 140, right: 140 },
-    verticalAlign: VerticalAlign.TOP,
-    children: [new Paragraph({ alignment: align, children: [text(label, { bold: true, size: 20 })] })],
-  });
+function roundedRect(context, x, y, width, height, radius) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+  context.beginPath();
+  context.moveTo(x + safeRadius, y);
+  context.lineTo(x + width - safeRadius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+  context.lineTo(x + width, y + height - safeRadius);
+  context.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height);
+  context.lineTo(x + safeRadius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+  context.lineTo(x, y + safeRadius);
+  context.quadraticCurveTo(x, y, x + safeRadius, y);
+  context.closePath();
 }
 
-function createHeader({ logoBytes, title, subtitle = "", showGrade = false }) {
-  const logo = new ImageRun({
-    data: logoBytes,
-    type: "png",
-    transformation: { width: 86, height: 62 },
-    altText: { title: "Logo", description: "Logo do Colégio Gênesis Life", name: "Logo" },
-  });
+function drawBox(context, x, y, width, height, { fill = "#FFFFFF", radius = 22, lineWidth = 3 } = {}) {
+  roundedRect(context, x, y, width, height, radius);
+  context.fillStyle = fill;
+  context.fill();
+  context.lineWidth = lineWidth;
+  context.strokeStyle = "#929292";
+  context.stroke();
+}
 
-  const identity = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    columnWidths: [1900, 7600],
-    borders: noBorder,
-    rows: [
-      new TableRow({
-        children: [
-          new TableCell({
-            width: { size: 1900, type: WidthType.DXA },
-            borders: cellBorders,
-            margins: { top: 120, bottom: 120, left: 100, right: 100 },
-            verticalAlign: VerticalAlign.CENTER,
-            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [logo] })],
-          }),
-          new TableCell({
-            width: { size: 7600, type: WidthType.DXA },
-            borders: cellBorders,
-            margins: { top: 120, bottom: 120, left: 160, right: 160 },
-            verticalAlign: VerticalAlign.CENTER,
-            shading: { type: ShadingType.CLEAR, fill: "FFFFFF" },
-            children: [
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [text("COLÉGIO GÊNESIS LIFE", { bold: true, size: 30 })],
-                spacing: { after: 90 },
-              }),
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [text(String(title || "").toUpperCase(), { bold: true, size: 24 })],
-                spacing: { after: subtitle ? 50 : 0 },
-              }),
-              ...(subtitle ? [new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [text(subtitle, { size: 19, color: COLORS.muted, italics: true })],
-              })] : []),
-            ],
-          }),
-        ],
-      }),
-    ],
-  });
+function drawCenteredText(context, value, x, y, width, {
+  fontSize = 38,
+  fontWeight = 700,
+  color = "#222222",
+  italic = false,
+} = {}) {
+  const fontStyle = italic ? "italic " : "";
+  let size = fontSize;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillStyle = color;
+  do {
+    context.font = `${fontStyle}${fontWeight} ${size}px Arial, sans-serif`;
+    if (context.measureText(value).width <= width - 36 || size <= 22) break;
+    size -= 2;
+  } while (size > 22);
+  context.fillText(value, x + width / 2, y);
+}
 
-  const details = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    columnWidths: [2800, 2200, 4500],
-    borders: noBorder,
-    rows: [new TableRow({
-      children: [
-        fieldCell("Data: ____/____/________", 2800),
-        fieldCell("Turma:", 2200),
-        fieldCell("Prof.ª:", 4500),
-      ],
-    })],
-  });
+function drawField(context, label, x, y, width, height, { centered = false } = {}) {
+  drawBox(context, x, y, width, height, { radius: 18, lineWidth: 3 });
+  context.fillStyle = "#222222";
+  context.font = "700 25px Arial, sans-serif";
+  context.textBaseline = "top";
+  context.textAlign = centered ? "center" : "left";
+  context.fillText(label, centered ? x + width / 2 : x + 22, y + 18);
+}
 
-  const studentWidths = showGrade ? [6500, 1200, 1800] : [8000, 1500];
-  const student = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    columnWidths: studentWidths,
-    borders: noBorder,
-    rows: [new TableRow({
-      children: [
-        fieldCell("Nome:", studentWidths[0]),
-        fieldCell("Nº:", studentWidths[1], { align: AlignmentType.CENTER }),
-        ...(showGrade ? [fieldCell("Nota:", studentWidths[2], { align: AlignmentType.CENTER })] : []),
-      ],
-    })],
-  });
+async function logoImageFromBytes(bytes) {
+  const blobUrl = URL.createObjectURL(new Blob([bytes], { type: "image/png" }));
+  try {
+    const image = new Image();
+    image.src = blobUrl;
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = reject;
+    });
+    return image;
+  } finally {
+    URL.revokeObjectURL(blobUrl);
+  }
+}
 
+async function createHeaderImage({ logoBytes, title, subtitle = "", showGrade = false }) {
+  const canvas = window.document.createElement("canvas");
+  canvas.width = 1600;
+  canvas.height = 520;
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#FFFFFF";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const gap = 14;
+  const left = 18;
+  const right = 1582;
+  const logoWidth = 290;
+  const titleX = left + logoWidth + gap;
+  const titleWidth = right - titleX;
+
+  drawBox(context, left, 18, logoWidth, 222, { radius: 28, lineWidth: 3 });
+  drawBox(context, titleX, 18, titleWidth, 102, { radius: 24, lineWidth: 3 });
+  drawBox(context, titleX, 134, titleWidth, 106, { radius: 24, lineWidth: 3 });
+
+  const logo = await logoImageFromBytes(logoBytes);
+  const maxLogoWidth = 215;
+  const maxLogoHeight = 155;
+  const scale = Math.min(maxLogoWidth / logo.width, maxLogoHeight / logo.height);
+  const logoDrawWidth = logo.width * scale;
+  const logoDrawHeight = logo.height * scale;
+  context.drawImage(
+    logo,
+    left + (logoWidth - logoDrawWidth) / 2,
+    18 + (222 - logoDrawHeight) / 2,
+    logoDrawWidth,
+    logoDrawHeight,
+  );
+
+  drawCenteredText(context, "COLÉGIO GÊNESIS LIFE", titleX, 69, titleWidth, { fontSize: 42, fontWeight: 700 });
+  drawCenteredText(context, String(title || "").toUpperCase(), titleX, subtitle ? 168 : 187, titleWidth, { fontSize: 34, fontWeight: 700 });
+  if (subtitle) {
+    drawCenteredText(context, subtitle, titleX, 212, titleWidth, { fontSize: 24, fontWeight: 400, color: "#555555", italic: true });
+  }
+
+  const rowY = 258;
+  const rowHeight = 104;
+  const dateWidth = 500;
+  const classWidth = 350;
+  drawField(context, "Data: ____/____/________", left, rowY, dateWidth, rowHeight);
+  drawField(context, "Turma:", left + dateWidth + gap, rowY, classWidth, rowHeight);
+  drawField(context, "Prof.ª:", left + dateWidth + classWidth + gap * 2, rowY, right - (left + dateWidth + classWidth + gap * 2), rowHeight);
+
+  const studentY = 380;
+  const studentHeight = 116;
+  const numberWidth = 190;
+  const gradeWidth = showGrade ? 240 : 0;
+  const nameWidth = right - left - numberWidth - gradeWidth - gap * (showGrade ? 2 : 1);
+  drawField(context, "Nome:", left, studentY, nameWidth, studentHeight);
+  drawField(context, "Nº:", left + nameWidth + gap, studentY, numberWidth, studentHeight, { centered: true });
+  if (showGrade) {
+    drawField(context, "Nota:", left + nameWidth + numberWidth + gap * 2, studentY, gradeWidth, studentHeight, { centered: true });
+  }
+
+  const headerBlob = await new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Falha ao criar o cabeçalho.")), "image/png");
+  });
+  return new Uint8Array(await headerBlob.arrayBuffer());
+}
+
+async function createHeader({ logoBytes, title, subtitle = "", showGrade = false }) {
+  const headerImage = await createHeaderImage({ logoBytes, title, subtitle, showGrade });
   return [
-    identity,
-    new Paragraph({ spacing: { after: 70 } }),
-    details,
-    new Paragraph({ spacing: { after: 45 } }),
-    student,
-    new Paragraph({ spacing: { after: 180 } }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [new ImageRun({
+        data: headerImage,
+        type: "png",
+        transformation: { width: 685, height: 223 },
+        altText: { title: "Cabeçalho", description: "Cabeçalho da atividade", name: "Cabeçalho" },
+      })],
+      spacing: { after: 160 },
+    }),
   ];
 }
 
@@ -296,14 +346,13 @@ export async function downloadStandardActivityDocx({
   includeTeacherContent = true,
 }) {
   const logoBytes = await fetchImageBytes("/logo-genesis.png");
-  const children = [
-    ...createHeader({
+  const header = await createHeader({
       logoBytes,
       title: modoProva ? `Prova de ${disciplina}` : `Atividade Adaptada de ${disciplina}`,
       subtitle: tema,
       showGrade: modoProva,
-    }),
-  ];
+    });
+  const children = [...header];
 
   if (modoProva && tempoEstimado) {
     children.push(new Paragraph({
@@ -328,8 +377,9 @@ export async function downloadProActivityDocx({
   includeTeacherContent = true,
 }) {
   const logoBytes = await fetchImageBytes("/logo-genesis.png");
+  const header = await createHeader({ logoBytes, title: `Atividade PRO de ${disciplina}`, subtitle: tema });
   const children = [
-    ...createHeader({ logoBytes, title: `Atividade PRO de ${disciplina}`, subtitle: tema }),
+    ...header,
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
       children: [text("Leia o texto com atenção:", { bold: true, size: 26 })],
