@@ -286,6 +286,59 @@ function answerArea(kind = "media") {
   }), new Paragraph({ spacing: { after: 100 } })];
 }
 
+function matchingColumnsTable(columnA = [], columnB = []) {
+  const itemCount = Math.max(columnA.length, columnB.length);
+  const rows = [
+    new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 4200, type: WidthType.DXA },
+          borders: { ...noBorder, bottom: thinBorder },
+          margins: { top: 80, bottom: 100, left: 120, right: 120 },
+          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [text("COLUNA A", { bold: true, size: 20 })] })],
+        }),
+        new TableCell({ width: { size: 900, type: WidthType.DXA }, borders: noBorder, children: [paragraph("")] }),
+        new TableCell({
+          width: { size: 4200, type: WidthType.DXA },
+          borders: { ...noBorder, bottom: thinBorder },
+          margins: { top: 80, bottom: 100, left: 120, right: 120 },
+          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [text("COLUNA B", { bold: true, size: 20 })] })],
+        }),
+      ],
+    }),
+  ];
+
+  for (let index = 0; index < itemCount; index += 1) {
+    rows.push(new TableRow({
+      height: { value: 520, rule: HeightRule.ATLEAST },
+      children: [
+        new TableCell({
+          width: { size: 4200, type: WidthType.DXA },
+          borders: noBorder,
+          margins: { top: 110, bottom: 110, left: 180, right: 180 },
+          verticalAlign: VerticalAlign.CENTER,
+          children: [paragraph(columnA[index] || "")],
+        }),
+        new TableCell({ width: { size: 900, type: WidthType.DXA }, borders: noBorder, children: [paragraph("")] }),
+        new TableCell({
+          width: { size: 4200, type: WidthType.DXA },
+          borders: noBorder,
+          margins: { top: 110, bottom: 110, left: 180, right: 180 },
+          verticalAlign: VerticalAlign.CENTER,
+          children: [paragraph(columnB[index] || "")],
+        }),
+      ],
+    }));
+  }
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    columnWidths: [4200, 900, 4200],
+    borders: noBorder,
+    rows,
+  });
+}
+
 function createDocument(children) {
   return new Document({
     creator: "Colégio Gênesis Life",
@@ -414,7 +467,10 @@ export async function downloadProActivityDocx({
     }
 
     children.push(paragraph(question.enunciado || ""));
-    if (Array.isArray(question.alternativas)) {
+    if (Array.isArray(question.colunaA) && Array.isArray(question.colunaB)) {
+      children.push(matchingColumnsTable(question.colunaA, question.colunaB));
+      children.push(new Paragraph({ spacing: { after: 140 } }));
+    } else if (Array.isArray(question.alternativas)) {
       for (const option of question.alternativas) {
         children.push(new Paragraph({
           children: [text(option)],
