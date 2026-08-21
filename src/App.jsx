@@ -80,6 +80,18 @@ export default function App() {
   const [proDisciplina, setProDisciplina] = useState("");
   const [proTema, setProTema] = useState("");
   const [proQtdQuestoes, setProQtdQuestoes] = useState(6);
+  const [proTipos, setProTipos] = useState({
+    alternativas: 2,
+    complete: 2,
+    relacione: 1,
+    texto: 1,
+    desenhe: 0,
+    criatividade: 0,
+    outro: 0,
+  });
+  const [proTiposArea, setProTiposArea] = useState({});
+  const [proTiposOrdem, setProTiposOrdem] = useState({});
+  const [proOutroTexto, setProOutroTexto] = useState("");
   const [proDificuldade, setProDificuldade] = useState("progressivo");
   const [proImagens, setProImagens] = useState("algumas");
   const [proEstiloImagem, setProEstiloImagem] = useState("automatico");
@@ -240,6 +252,15 @@ Comece com "Prezado(a) responsável," e termine com "Atenciosamente, Equipe Peda
 
   const tiposAtivos = () => Object.entries(tipos).filter(([, q]) => q > 0);
 
+  const toggleProTipo = (id) => {
+    setProTipos((prev) => ({ ...prev, [id]: prev[id] > 0 ? 0 : 1 }));
+  };
+
+  const setProQtd = (id, val) => {
+    const quantidade = Math.max(0, Math.min(10, Number(val) || 0));
+    setProTipos((prev) => ({ ...prev, [id]: quantidade }));
+  };
+
   const gerarAtividade = async () => {
     if (tiposAtivos().length === 0) {
       setError("Selecione pelo menos um tipo de questão.");
@@ -352,15 +373,37 @@ Comece com "Prezado(a) responsável," e termine com "Atenciosamente, Equipe Peda
     const nivelImg = { "sem": 0, "poucas": 1, "algumas": 3, "muitas": 5 };
     const maxImgs = nivelImg[proImagens] || 3;
 
+    const tiposProSelecionados = Object.entries(proTipos)
+      .filter(([, quantidade]) => quantidade > 0)
+      .map(([id, quantidade]) => {
+        const tipo = TIPOS_QUESTAO.find((item) => item.id === id);
+        const ordem = proTiposOrdem[id] || 99;
+        const area = proTiposArea[id] || "media";
+        const nome = id === "outro" ? (proOutroTexto.trim() || "Tipo personalizado") : tipo?.label;
+        return { id, nome, quantidade, ordem, area };
+      })
+      .sort((a, b) => a.ordem - b.ordem);
+
+    if (tiposProSelecionados.length === 0) {
+      setProError("Selecione pelo menos um tipo de questão.");
+      setProLoading(false);
+      return;
+    }
+
+    const totalProQuestoes = tiposProSelecionados.reduce((total, item) => total + item.quantidade, 0);
+    const descricaoTiposPro = tiposProSelecionados
+      .map((item, indice) => `${indice + 1}º — ${item.nome}: ${item.quantidade} questão(ões); área de resposta: ${item.area}`)
+      .join("\n- ");
+
     const prompt = `Você é um especialista em educação do Colégio Gênesis Life, em Osasco-SP. Gere uma atividade escolar em formato JSON.
 
 SÉRIE: ${proAlunoSelecionado?.serie || proSerie}
 DISCIPLINA: ${proDisciplina}
 TEMA: ${proTema}
-QUANTIDADE DE QUESTÕES: ${proQtdQuestoes}
+QUANTIDADE TOTAL DE QUESTÕES: ${totalProQuestoes}
 DIFICULDADE: ${proDificuldade}
-TIPO DE ATIVIDADE: ${proTipoAtividade}
-ÁREA DE RESPOSTA: ${proAreaResposta}
+TIPOS DE QUESTÃO, QUANTIDADES, ORDEM E ÁREA DE RESPOSTA (siga EXATAMENTE):
+- ${descricaoTiposPro}
 ${proGabarito ? "INCLUIR GABARITO" : "SEM GABARITO"}
 MÁXIMO DE IMAGENS: ${maxImgs}
 ESTILO DAS IMAGENS: ${proEstiloImagem}
@@ -395,8 +438,9 @@ REGRAS IMPORTANTES:
 7. Adapte a linguagem e complexidade à série.
 8. Use linguagem acolhedora e motivadora.
 9. Numere todas as questões sequencialmente.
-10. IMAGENS: Marque EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS. Inclua "com textos em português" no prompt. As outras: "precisaImagem": false e "promptImagem": null.
-11. NUNCA destaque, marque ou revele a resposta correta no enunciado ou nas alternativas. Não use asteriscos de Markdown, negrito, itálico, letras maiúsculas diferentes, símbolos ou qualquer formatação que entregue a resposta ao aluno.
+10. Respeite EXATAMENTE os tipos, as quantidades e a ordem solicitados. Em cada questão, informe "areaResposta" com o valor configurado para seu tipo.
+11. IMAGENS: Marque EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS. Inclua "com textos em português" no prompt. As outras: "precisaImagem": false e "promptImagem": null.
+12. NUNCA destaque, marque ou revele a resposta correta no enunciado ou nas alternativas. Não use asteriscos de Markdown, negrito, itálico, letras maiúsculas diferentes, símbolos ou qualquer formatação que entregue a resposta ao aluno.
 
 Responda APENAS com JSON válido, sem markdown, neste formato:
 {
@@ -406,6 +450,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       "numero": 1,
       "tipo": "multipla_escolha",
       "enunciado": "texto da questão",
+      "areaResposta": "media",
       "precisaImagem": false,
       "promptImagem": null,
       "alternativas": ["A) ...", "B) ...", "C) ..."],
@@ -415,6 +460,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       "numero": 2,
       "tipo": "complete",
       "enunciado": "Complete: O sol é uma ______",
+      "areaResposta": "pequena",
       "precisaImagem": true,
       "promptImagem": "Ilustração didática do sistema solar mostrando o sol no centro, com textos em português, fundo branco",
       "alternativas": null,
@@ -491,7 +537,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
           disciplina: proDisciplina,
           serie: proAlunoSelecionado?.serie || proSerie,
           tema: proTema,
-          tipos_questao: { tipo: proTipoAtividade, pro: true },
+          tipos_questao: { tipos: proTipos, ordem: proTiposOrdem, areas: proTiposArea, personalizado: proOutroTexto, pro: true },
           conteudo: JSON.stringify(resultado),
           imagens: imagensColetadas,
         });
@@ -531,7 +577,8 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
         if (q.alternativas) {
           questoesHtml += q.alternativas.map((a) => `<p style="margin-left:20px;">${a}</p>`).join("");
         }
-        const areaH = proAreaResposta === "pequena" ? 30 : proAreaResposta === "grande" ? 100 : 60;
+        const areaQuestao = q.areaResposta || proTiposArea[q.tipo] || proAreaResposta;
+        const areaH = areaQuestao === "pequena" ? 30 : areaQuestao === "grande" || areaQuestao === "quadro" ? 100 : areaQuestao === "linhas" ? 75 : 60;
         if (!q.alternativas) {
           questoesHtml += `<div style="border:1px solid #ccc; min-height:${areaH}px; margin:10px 0; border-radius:4px;"></div>`;
         }
@@ -1362,17 +1409,6 @@ ${renderMarkdown(resultado)}
                   {proDisciplina} — {proTema} {proAlunoSelecionado ? `— ${proAlunoSelecionado.nome}` : ""}
                 </p>
 
-                {/* Quantidade */}
-                <label style={labelStyle}>Quantidade de questões</label>
-                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                  {[3, 5, 6, 8, 10].map((n) => (
-                    <button key={n} onClick={() => setProQtdQuestoes(n)}
-                      style={{ ...chipStyle, background: proQtdQuestoes === n ? "#1F3A3D" : cores.card, color: proQtdQuestoes === n ? "white" : cores.text, border: proQtdQuestoes === n ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
-                      {n}
-                    </button>
-                  ))}
-                </div>
-
                 {/* Dificuldade */}
                 <label style={labelStyle}>Nível de dificuldade</label>
                 <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
@@ -1384,16 +1420,76 @@ ${renderMarkdown(resultado)}
                   ))}
                 </div>
 
-                {/* Tipo de atividade */}
-                <label style={labelStyle}>Tipo de atividade</label>
-                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                  {[{ id: "mista", label: "Mista" }, { id: "multipla_escolha", label: "Múltipla escolha" }, { id: "aberta", label: "Perguntas abertas" }, { id: "complete", label: "Complete" }, { id: "ligue", label: "Ligue/Associe" }, { id: "vf", label: "V ou F" }, { id: "interpretacao", label: "Interpretação" }].map((t) => (
-                    <button key={t.id} onClick={() => setProTipoAtividade(t.id)}
-                      style={{ ...chipStyle, fontSize: 12, background: proTipoAtividade === t.id ? "#1F3A3D" : cores.card, color: proTipoAtividade === t.id ? "white" : cores.text, border: proTipoAtividade === t.id ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
-                      {t.label}
-                    </button>
-                  ))}
+                {/* Tipos detalhados de questão */}
+                <label style={labelStyle}>Tipos de questão, quantidade e ordem</label>
+                <p style={{ fontSize: 12, color: cores.textSub, margin: "-2px 0 10px" }}>
+                  Escolha exatamente como a atividade deverá ser montada.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                  {TIPOS_QUESTAO.map((tipo) => {
+                    const ativo = proTipos[tipo.id] > 0;
+                    const areas = [
+                      { id: "pequena", label: "Pequena" },
+                      { id: "media", label: "Média" },
+                      { id: "grande", label: "Grande" },
+                      { id: "linhas", label: "Com linhas" },
+                      { id: "quadro", label: "Quadro para desenho" },
+                    ];
+                    return (
+                      <div key={tipo.id}>
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 8, padding: "9px 10px",
+                          background: ativo ? cores.cardActiveBg : cores.card,
+                          border: ativo ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}`,
+                          borderRadius: ativo ? "10px 10px 0 0" : 10,
+                        }}>
+                          <button onClick={() => toggleProTipo(tipo.id)} style={{
+                            width: 22, height: 22, borderRadius: 6, cursor: "pointer",
+                            border: ativo ? "none" : `2px solid ${cores.cardBorder}`,
+                            background: ativo ? "#1F3A3D" : "transparent", color: "white", fontWeight: 700,
+                          }}>{ativo ? "✓" : ""}</button>
+                          <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: cores.text }}>
+                            {tipo.icon} {tipo.label}
+                          </span>
+                          {ativo && (
+                            <>
+                              <select value={proTiposOrdem[tipo.id] || ""}
+                                onChange={(e) => setProTiposOrdem((prev) => ({ ...prev, [tipo.id]: Number(e.target.value) || "" }))}
+                                style={{ width: 50, padding: 4, borderRadius: 6, border: `1px solid ${cores.cardBorder}`, background: cores.card, color: cores.text }}>
+                                <option value="">Nº</option>
+                                {[1,2,3,4,5,6,7].map((n) => <option key={n} value={n}>{n}º</option>)}
+                              </select>
+                              <button onClick={() => setProQtd(tipo.id, proTipos[tipo.id] - 1)}
+                                style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${cores.cardBorder}`, background: cores.card, color: cores.text, cursor: "pointer" }}>−</button>
+                              <strong style={{ width: 22, textAlign: "center", color: cores.text }}>{proTipos[tipo.id]}</strong>
+                              <button onClick={() => setProQtd(tipo.id, proTipos[tipo.id] + 1)}
+                                style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${cores.cardBorder}`, background: cores.card, color: cores.text, cursor: "pointer" }}>+</button>
+                            </>
+                          )}
+                        </div>
+                        {ativo && (
+                          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", padding: "8px 10px", background: cores.areaSubBg, border: "2px solid #1F3A3D", borderTop: "none", borderRadius: "0 0 10px 10px" }}>
+                            <span style={{ width: "100%", fontSize: 11, color: cores.textSub }}>Área de resposta:</span>
+                            {areas.map((area) => (
+                              <button key={area.id} onClick={() => setProTiposArea((prev) => ({ ...prev, [tipo.id]: area.id }))}
+                                style={{
+                                  padding: "4px 8px", borderRadius: 6, fontSize: 11, cursor: "pointer",
+                                  background: (proTiposArea[tipo.id] || "media") === area.id ? "#1F3A3D" : cores.card,
+                                  color: (proTiposArea[tipo.id] || "media") === area.id ? "white" : cores.text,
+                                  border: `1px solid ${cores.cardBorder}`,
+                                }}>{area.label}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
+                {proTipos.outro > 0 && (
+                  <input type="text" value={proOutroTexto} onChange={(e) => setProOutroTexto(e.target.value)}
+                    placeholder="Descreva o tipo personalizado. Ex: caça-palavras, V ou F, cruzadinha..."
+                    style={{ ...inputStyle, marginBottom: 16 }} />
+                )}
 
                 {/* Imagens */}
                 <label style={labelStyle}>Uso de imagens</label>
@@ -1420,17 +1516,6 @@ ${renderMarkdown(resultado)}
                     </div>
                   </>
                 )}
-
-                {/* Área de resposta */}
-                <label style={labelStyle}>Área para resposta</label>
-                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                  {[{ id: "pequena", label: "Pequena" }, { id: "media", label: "Média" }, { id: "grande", label: "Grande" }].map((a) => (
-                    <button key={a.id} onClick={() => setProAreaResposta(a.id)}
-                      style={{ ...chipStyle, background: proAreaResposta === a.id ? "#1F3A3D" : cores.card, color: proAreaResposta === a.id ? "white" : cores.text, border: proAreaResposta === a.id ? "2px solid #1F3A3D" : `2px solid ${cores.cardBorder}` }}>
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
 
                 {/* Gabarito */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: cores.card, borderRadius: 10, border: `2px solid ${cores.cardBorder}`, marginBottom: 16 }}>
@@ -1508,6 +1593,13 @@ ${renderMarkdown(resultado)}
                       {q.alternativas && q.alternativas.map((a, i) => (
                         <p key={i} style={{ fontSize: 13, marginLeft: 16 }}>{a}</p>
                       ))}
+                      {!q.alternativas && (
+                        <div style={{
+                          minHeight: q.areaResposta === "pequena" ? 30 : q.areaResposta === "grande" || q.areaResposta === "quadro" ? 100 : q.areaResposta === "linhas" ? 75 : 60,
+                          border: "1px solid #ccc", borderRadius: 6, marginTop: 10,
+                          backgroundImage: q.areaResposta === "linhas" ? "repeating-linear-gradient(to bottom, transparent 0, transparent 23px, #ccc 24px)" : "none",
+                        }} />
+                      )}
                     </div>
                   ))}
 
