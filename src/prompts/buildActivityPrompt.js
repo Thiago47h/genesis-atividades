@@ -102,5 +102,5 @@ ${config.alunoSelecionado.observacoes ? `Observações do professor: ${config.al
 ${config.alunoSelecionado.pei_resumo ? `PEI (Plano Educacional Individualizado):\n${config.alunoSelecionado.pei_resumo}` : ""}
 Use TODAS essas informações para personalizar a atividade. Adapte linguagem, complexidade, tipos de apoio e formato às necessidades deste aluno.` : ""}
 ${config.letraMaiuscula ? "IMPORTANTE: Escreva TODA a atividade em LETRAS MAIÚSCULAS." : ""}
-${config.negrito ? "FORMATAÇÃO: use negrito APENAS nos enunciados e títulos. NUNCA coloque em negrito alternativas, palavras que completam frases, pistas ou respostas corretas." : "FORMATAÇÃO: não use negrito nas questões, alternativas, palavras para completar ou respostas."}`;
+${config.negrito ? "FORMATAÇÃO: escreva TODA a atividade em negrito, de maneira completamente uniforme — títulos, texto base, enunciados, alternativas, frases para completar e demais conteúdos. Não destaque nenhuma alternativa ou resposta de forma diferente das outras." : "FORMATAÇÃO: não use negrito em nenhuma parte da atividade — títulos, texto base, enunciados, alternativas, palavras para completar ou respostas."}`;
 }
