@@ -66,7 +66,7 @@ REGRAS IMPORTANTES:
 11. Para "Relacione as colunas", use exatamente duas colunas claras.
 12. Numere todas as questões sequencialmente.
 13. Use linguagem acolhedora e motivadora.
-14. NUNCA destaque, marque ou revele a resposta correta dentro das questões. Não use negrito, itálico, letras maiúsculas, símbolos, cores ou qualquer formatação diferente na alternativa correta, na palavra que completa a frase ou em pistas da resposta.
+14. Em questões de alternativas, TODAS as opções (A, B e C) devem ter EXATAMENTE a mesma formatação. NUNCA coloque somente a alternativa correta em negrito, itálico, maiúsculas, entre símbolos ou com qualquer destaque que revele a resposta. Se o negrito geral estiver ativado, todas as alternativas ficam em negrito por igual.
 
 FORMATO DE SAÍDA (use Markdown simples):
 
@@ -102,5 +102,5 @@ ${config.alunoSelecionado.observacoes ? `Observações do professor: ${config.al
 ${config.alunoSelecionado.pei_resumo ? `PEI (Plano Educacional Individualizado):\n${config.alunoSelecionado.pei_resumo}` : ""}
 Use TODAS essas informações para personalizar a atividade. Adapte linguagem, complexidade, tipos de apoio e formato às necessidades deste aluno.` : ""}
 ${config.letraMaiuscula ? "IMPORTANTE: Escreva TODA a atividade em LETRAS MAIÚSCULAS." : ""}
-${config.negrito ? "FORMATAÇÃO: escreva TODA a atividade em negrito, de maneira completamente uniforme — títulos, texto base, enunciados, alternativas, frases para completar e demais conteúdos. Não destaque nenhuma alternativa ou resposta de forma diferente das outras." : "FORMATAÇÃO: não use negrito em nenhuma parte da atividade — títulos, texto base, enunciados, alternativas, palavras para completar ou respostas."}`;
+${config.negrito ? "IMPORTANTE: Escreva TODA a atividade em **negrito** — enunciados, alternativas, textos, frases para completar, tudo." : ""}`;
 }
