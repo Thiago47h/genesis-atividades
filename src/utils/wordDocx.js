@@ -339,6 +339,27 @@ function matchingColumnsTable(columnA = [], columnB = []) {
   });
 }
 
+function wordSearchTable(wordSearch) {
+  const grid = Array.isArray(wordSearch?.grade) ? wordSearch.grade : [];
+  const rows = grid.map((row) => new TableRow({
+    height: { value: 330, rule: HeightRule.EXACT },
+    children: row.map((letter) => new TableCell({
+      borders: cellBorders,
+      width: { size: Math.floor(9000 / Math.max(row.length, 1)), type: WidthType.DXA },
+      verticalAlign: VerticalAlign.CENTER,
+      children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [text(letter, { bold: true, size: 19 })] })],
+    })),
+  }));
+
+  return [
+    new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows }),
+    new Paragraph({
+      children: [text("Palavras: ", { bold: true }), text((wordSearch?.palavras || []).join(" • "))],
+      spacing: { before: 100, after: 160 },
+    }),
+  ];
+}
+
 function createDocument(children) {
   return new Document({
     creator: "Colégio Gênesis Life",
@@ -470,6 +491,8 @@ export async function downloadProActivityDocx({
     if (Array.isArray(question.colunaA) && Array.isArray(question.colunaB)) {
       children.push(matchingColumnsTable(question.colunaA, question.colunaB));
       children.push(new Paragraph({ spacing: { after: 140 } }));
+    } else if (Array.isArray(question.cacaPalavras?.grade)) {
+      children.push(...wordSearchTable(question.cacaPalavras));
     } else if (Array.isArray(question.alternativas)) {
       for (const option of question.alternativas) {
         children.push(new Paragraph({
