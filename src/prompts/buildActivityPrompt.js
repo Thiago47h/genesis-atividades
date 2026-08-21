@@ -66,6 +66,7 @@ REGRAS IMPORTANTES:
 11. Para "Relacione as colunas", use exatamente duas colunas claras.
 12. Numere todas as questões sequencialmente.
 13. Use linguagem acolhedora e motivadora.
+14. Em questões de alternativas, TODAS as opções (A, B e C) devem ter EXATAMENTE a mesma formatação. NUNCA coloque somente a alternativa correta em negrito, itálico, maiúsculas, entre símbolos ou com qualquer destaque que revele a resposta. Se o negrito geral estiver ativado, todas as alternativas ficam em negrito por igual.
 
 FORMATO DE SAÍDA (use Markdown simples):
 

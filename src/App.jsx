@@ -396,6 +396,7 @@ REGRAS IMPORTANTES:
 8. Use linguagem acolhedora e motivadora.
 9. Numere todas as questões sequencialmente.
 10. IMAGENS: Marque EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS. Inclua "com textos em português" no prompt. As outras: "precisaImagem": false e "promptImagem": null.
+11. NUNCA destaque, marque ou revele a resposta correta no enunciado ou nas alternativas. Não use asteriscos de Markdown, negrito, itálico, letras maiúsculas diferentes, símbolos ou qualquer formatação que entregue a resposta ao aluno.
 
 Responda APENAS com JSON válido, sem markdown, neste formato:
 {
