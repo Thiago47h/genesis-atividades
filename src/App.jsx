@@ -9,8 +9,8 @@ const SERIES_OPTIONS = {
 
 const DISCIPLINAS = {
   "Educação Infantil": ["Linguagem", "Matemática", "Natureza e Sociedade", "Artes", "Movimento"],
-  "Fundamental I": ["Português", "Matemática", "Ciências", "História", "Geografia", "Artes", "Ed. Física", "Inglês"],
-  "Fundamental II": ["Português", "Matemática", "Ciências", "História", "Geografia", "Artes", "Ed. Física", "Inglês"],
+  "Fundamental I": ["Português", "Matemática", "Ciências", "História", "Geografia", "Artes", "Ed. Física", "Inglês", "Espanhol"],
+  "Fundamental II": ["Português", "Matemática", "Ciências", "História", "Geografia", "Artes", "Ed. Física", "Inglês", "Espanhol"],
 };
 
 const TIPOS_QUESTAO = [
@@ -35,6 +35,7 @@ const TEMAS_SUGERIDOS = {
   "Movimento": ["Brincadeiras", "Coordenação motora", "Jogos cooperativos"],
   "Ed. Física": ["Esportes coletivos", "Jogos populares", "Saúde e movimento"],
   "Inglês": ["Greetings", "Colors and numbers", "Animals", "Family members", "Food"],
+  "Espanhol": ["Saludos", "Colores y números", "Animales", "La familia", "Los alimentos", "El cuerpo humano"],
 };
 
 function buildPrompt(config) {
@@ -244,6 +245,7 @@ export default function App() {
   const [alunoBusca, setAlunoBusca] = useState("");
   const [alunoMsg, setAlunoMsg] = useState("");
   const [alunoSelecionado, setAlunoSelecionado] = useState(null);
+  const [buscaAluno, setBuscaAluno] = useState("");
 
   const NECESSIDADES_OPCOES = [
     "Dificuldade de leitura",
@@ -486,7 +488,7 @@ Comece com "Prezado(a) responsável," e termine com "Atenciosamente, Equipe Peda
     const nivelImg = { "sem": 0, "poucas": 1, "algumas": 3, "muitas": 5 };
     const maxImgs = nivelImg[proImagens] || 3;
 
-    const prompt = `Você é um especialista em educação. Gere uma atividade escolar em formato JSON.
+    const prompt = `Você é um especialista em educação do Colégio Gênesis Life, em Osasco-SP. Gere uma atividade escolar em formato JSON.
 
 SÉRIE: ${proAlunoSelecionado?.serie || proSerie}
 DISCIPLINA: ${proDisciplina}
@@ -496,22 +498,44 @@ DIFICULDADE: ${proDificuldade}
 TIPO DE ATIVIDADE: ${proTipoAtividade}
 ÁREA DE RESPOSTA: ${proAreaResposta}
 ${proGabarito ? "INCLUIR GABARITO" : "SEM GABARITO"}
-MÁXIMO DE IMAGENS: ${maxImgs} (só quando realmente útil pedagogicamente)
+MÁXIMO DE IMAGENS: ${maxImgs}
 ESTILO DAS IMAGENS: ${proEstiloImagem}
-${proAlunoSelecionado ? `ALUNO: ${proAlunoSelecionado.nome}
-NECESSIDADES: ${(proAlunoSelecionado.necessidades || []).join(", ")}
-OBSERVAÇÕES: ${proAlunoSelecionado.observacoes || ""}` : ""}
-${proNecessidades.length > 0 ? `ADAPTAÇÕES: ${proNecessidades.join(", ")}` : ""}
+${proAlunoSelecionado ? `
+PERFIL DO ALUNO:
+Nome: ${proAlunoSelecionado.nome}
+Série: ${proAlunoSelecionado.serie}
+Necessidades: ${(proAlunoSelecionado.necessidades || []).join(", ")}
+Observações: ${proAlunoSelecionado.observacoes || ""}
+${proAlunoSelecionado.pei_resumo ? `PEI: ${proAlunoSelecionado.pei_resumo}` : ""}
+Use TODAS essas informações para personalizar a atividade.` : ""}
+${proNecessidades.length > 0 ? `
+ADAPTAÇÕES ESPECIAIS — adapte a atividade considerando:
+${proNecessidades.map(n => `- ${n}`).join("\n")}
 
-REGRAS:
-1. Comece com um TEXTO BASE sobre o tema que contenha as respostas das questões.
-2. Adapte a linguagem à série.
-3. IMAGENS: Você DEVE marcar EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS descrevendo a imagem a ser gerada. Inclua "com textos e labels em português" no prompt. As outras devem ter "precisaImagem": false e "promptImagem": null.
-4. Respeite EXATAMENTE o número de ${maxImgs} imagens.
+Orientações:
+- Dificuldade de leitura: enunciados curtos, palavras simples, priorizar visual.
+- TDAH: questões diretas, uma instrução por vez, variar tipos.
+- TEA: comandos literais, evitar figuras de linguagem, roteiro previsível, apoio visual.
+- Deficiência intelectual: reduzir complexidade, imagens de apoio, linguagem concreta.
+- Alfabetização em processo: letras maiúsculas, frases curtas, apoio de imagem.
+- Comandos mais curtos: uma ação por enunciado.
+Aplique APENAS as relevantes.` : ""}
+
+REGRAS IMPORTANTES:
+1. SEMPRE comece com um TEXTO BASE sobre o tema. Esse texto é o CORAÇÃO da atividade — TODAS as respostas de TODAS as questões devem ser encontradas nele.
+2. Questões de ALTERNATIVAS: respostas que o aluno encontra no texto base. EXATAMENTE 3 opções: A, B e C.
+3. Questões de COMPLETE: frases retiradas ou baseadas no texto base.
+4. Questões de RELACIONE/LIGUE/ASSOCIAÇÃO: informações presentes no texto base.
+5. NENHUMA questão pode exigir conhecimento que não esteja no texto base (exceto "Desenhe" e criatividade).
+6. Enunciados objetivos, claros e curtos, adequados à faixa etária.
+7. Adapte a linguagem e complexidade à série.
+8. Use linguagem acolhedora e motivadora.
+9. Numere todas as questões sequencialmente.
+10. IMAGENS: Marque EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS. Inclua "com textos em português" no prompt. As outras: "precisaImagem": false e "promptImagem": null.
 
 Responda APENAS com JSON válido, sem markdown, neste formato:
 {
-  "textoBase": "texto introdutório sobre o tema...",
+  "textoBase": "texto introdutório sobre o tema com todas as informações para responder as questões...",
   "questoes": [
     {
       "numero": 1,
@@ -527,13 +551,13 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       "tipo": "complete",
       "enunciado": "Complete: O sol é uma ______",
       "precisaImagem": true,
-      "promptImagem": "Ilustração didática do sistema solar mostrando o sol no centro, planetas ao redor, fundo branco, sem texto",
+      "promptImagem": "Ilustração didática do sistema solar mostrando o sol no centro, com textos em português, fundo branco",
       "alternativas": null,
       "resposta": "estrela"
     }
   ],
-  "gabarito": ${proGabarito ? '"texto do gabarito completo"' : "null"},
-  "dicasProfessor": "Seção com dicas e observações para o professor sobre como aplicar esta atividade, adaptações sugeridas e pontos de atenção."
+  "gabarito": ${proGabarito ? '"gabarito completo com todas as respostas"' : "null"},
+  "dicasProfessor": "Dicas e observações para o professor: como aplicar esta atividade, adaptações sugeridas, pontos de atenção sobre o aluno."
 }`;
 
     try {
@@ -1447,14 +1471,18 @@ ${renderMarkdown(resultado)}
                         <button onClick={() => setProAlunoSelecionado(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: cores.textSub }}>✕</button>
                       </div>
                     ) : (
+                      <>
+                      <input type="text" placeholder="🔍 Buscar aluno..." value={buscaAluno} onChange={(e) => setBuscaAluno(e.target.value)}
+                        style={{ ...inputStyle, fontSize: 12, padding: "8px 12px", marginBottom: 6 }} />
                       <div style={{ maxHeight: 150, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-                        {alunos.map((a) => (
-                          <button key={a.id} onClick={() => { setProAlunoSelecionado(a); setProSerie(a.serie); setProNecessidades(a.necessidades || []); }}
+                        {alunos.filter((a) => a.nome.toLowerCase().includes(buscaAluno.toLowerCase()) || (a.serie || "").toLowerCase().includes(buscaAluno.toLowerCase())).map((a) => (
+                          <button key={a.id} onClick={() => { setProAlunoSelecionado(a); setProSerie(a.serie); setProNecessidades(a.necessidades || []); setBuscaAluno(""); }}
                             style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", borderRadius: 8, border: `1px solid ${cores.cardBorder}`, background: cores.card, cursor: "pointer", textAlign: "left", width: "100%", fontSize: 13, color: cores.text }}>
                             {a.nome} <span style={{ fontSize: 11, color: cores.textSub }}>— {a.serie}</span>
                           </button>
                         ))}
                       </div>
+                      </>
                     )}
                   </div>
                 )}
@@ -1798,8 +1826,11 @@ ${renderMarkdown(resultado)}
                       Nenhum aluno cadastrado. <span onClick={() => setPagina("alunos")} style={{ color: "#1F3A3D", cursor: "pointer", fontWeight: 600 }}>Cadastrar →</span>
                     </div>
                   ) : (
+                    <>
+                    <input type="text" placeholder="🔍 Buscar aluno..." value={buscaAluno} onChange={(e) => setBuscaAluno(e.target.value)}
+                      style={{ ...inputStyle, fontSize: 12, padding: "8px 12px", marginBottom: 6 }} />
                     <div style={{ maxHeight: 180, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-                      {alunos.map((aluno) => (
+                      {alunos.filter((a) => a.nome.toLowerCase().includes(buscaAluno.toLowerCase()) || (a.serie || "").toLowerCase().includes(buscaAluno.toLowerCase())).map((aluno) => (
                         <button key={aluno.id} onClick={() => {
                           setAlunoSelecionado(aluno);
                           if (aluno.serie) {
@@ -1826,6 +1857,7 @@ ${renderMarkdown(resultado)}
                         </button>
                       ))}
                     </div>
+                    </>
                   )}
                 </>
               )}
