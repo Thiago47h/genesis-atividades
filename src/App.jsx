@@ -1593,6 +1593,13 @@ ${renderMarkdown(resultado)}
                       {q.alternativas && q.alternativas.map((a, i) => (
                         <p key={i} style={{ fontSize: 13, marginLeft: 16 }}>{a}</p>
                       ))}
+                      {!q.alternativas && (
+                        <div style={{
+                          minHeight: q.areaResposta === "pequena" ? 30 : q.areaResposta === "grande" || q.areaResposta === "quadro" ? 100 : q.areaResposta === "linhas" ? 75 : 60,
+                          border: "1px solid #ccc", borderRadius: 6, marginTop: 10,
+                          backgroundImage: q.areaResposta === "linhas" ? "repeating-linear-gradient(to bottom, transparent 0, transparent 23px, #ccc 24px)" : "none",
+                        }} />
+                      )}
                     </div>
                   ))}
 
