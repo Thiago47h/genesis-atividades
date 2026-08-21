@@ -63,7 +63,15 @@ REGRAS IMPORTANTES:
 8. Alternativas sempre com EXATAMENTE 3 opções: A, B e C.
 9. Adapte a linguagem e complexidade à série informada.
 10. Para "Desenhe" e "Use sua criatividade", crie comandos estimulantes relacionados ao tema do texto.
-11. Para "Relacione as colunas", use exatamente duas colunas claras.
+11. Para "Relacione as colunas" ou "Ligue":
+- Crie exatamente duas colunas: COLUNA A e COLUNA B.
+- A COLUNA A deve usar números: 1, 2, 3...
+- A COLUNA B deve usar letras: A, B, C...
+- Use de 3 a 5 itens e mantenha a mesma quantidade nas duas colunas.
+- EMBARALHE a COLUNA B para que as respostas corretas NÃO fiquem na mesma linha da COLUNA A.
+- NUNCA trace as ligações, coloque setas, destaque respostas ou entregue os pares corretos na atividade.
+- Apresente visualmente em duas colunas lado a lado, com bastante espaço entre elas para o aluno traçar linhas.
+- Informe as correspondências corretas somente no gabarito, no formato: 1-C, 2-A, 3-B.
 12. Numere todas as questões sequencialmente.
 13. Use linguagem acolhedora e motivadora.
 14. Em questões de alternativas, TODAS as opções (A, B e C) devem ter EXATAMENTE a mesma formatação. NUNCA coloque somente a alternativa correta em negrito, itálico, maiúsculas, entre símbolos ou com qualquer destaque que revele a resposta. Se o negrito geral estiver ativado, todas as alternativas ficam em negrito por igual.
