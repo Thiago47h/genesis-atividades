@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase.js";
 
 import { SERIES_OPTIONS, DISCIPLINAS, TIPOS_QUESTAO, TEMAS_SUGERIDOS } from "./constants/education.js";
@@ -17,6 +17,7 @@ export default function App() {
   const [loginErro, setLoginErro] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [verificandoAuth, setVerificandoAuth] = useState(true);
+  const logoutIntencional = useRef(false);
 
   useEffect(() => {
     let ativo = true;
@@ -34,10 +35,27 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!ativo) return;
       if (session?.user) {
+        logoutIntencional.current = false;
         setUsuario(session.user);
         setVerificandoAuth(false);
       } else if (event === "SIGNED_OUT" || event === "USER_DELETED") {
-        setUsuario(null);
+        if (logoutIntencional.current || event === "USER_DELETED") {
+          setUsuario(null);
+          return;
+        }
+
+        // Alguns navegadores disparam SIGNED_OUT durante uma troca momentânea
+        // do token. Aguarde e confirme antes de remover o usuário da tela.
+        window.setTimeout(async () => {
+          if (!ativo || logoutIntencional.current) return;
+          const { data: { session: sessaoRecuperada } } = await supabase.auth.getSession();
+          if (sessaoRecuperada?.user) {
+            setUsuario(sessaoRecuperada.user);
+            return;
+          }
+          setUsuario(null);
+          setLoginErro("Sua sessão expirou. Entre novamente para continuar.");
+        }, 3000);
       }
     });
 
@@ -45,7 +63,7 @@ export default function App() {
       if (document.visibilityState !== "visible") return;
       const { data: { session } } = await supabase.auth.getSession();
       if (!ativo || !session) return;
-      if (session.expires_at && session.expires_at * 1000 <= Date.now() + 60_000) {
+      if (session.expires_at && session.expires_at * 1000 <= Date.now() + 15 * 60_000) {
         const { data: { session: renovada }, error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
           console.error("Erro ao renovar sessão:", refreshError.message);
@@ -59,12 +77,14 @@ export default function App() {
 
     document.addEventListener("visibilitychange", recuperarAoVoltar);
     window.addEventListener("online", recuperarAoVoltar);
+    const renovacaoPeriodica = window.setInterval(recuperarAoVoltar, 5 * 60_000);
 
     return () => {
       ativo = false;
       subscription.unsubscribe();
       document.removeEventListener("visibilitychange", recuperarAoVoltar);
       window.removeEventListener("online", recuperarAoVoltar);
+      window.clearInterval(renovacaoPeriodica);
     };
   }, []);
 
@@ -84,6 +104,7 @@ export default function App() {
   };
 
   const fazerLogout = async () => {
+    logoutIntencional.current = true;
     await supabase.auth.signOut();
     setUsuario(null);
   };
