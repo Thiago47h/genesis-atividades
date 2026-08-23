@@ -403,10 +403,12 @@ Comece com "Prezado(a) responsável," e termine com "Atenciosamente, Equipe Peda
     const prompt = `Você é um especialista em educação do Colégio Gênesis Life, em Osasco-SP. Gere uma atividade escolar em formato JSON.
 
 SÉRIE: ${proAlunoSelecionado?.serie || proSerie}
+SEGMENTO: ${proSegmento}
 DISCIPLINA: ${proDisciplina}
 TEMA: ${proTema}
 QUANTIDADE TOTAL DE QUESTÕES: ${totalProQuestoes}
 DIFICULDADE: ${proDificuldade}
+${proDificuldade === "progressivo" ? `PROGRESSÃO DE DIFICULDADE: organize as questões do nível mais simples ao mais desafiador, começando com recuperação direta de informações do texto e avançando para interpretação e aplicação. Não misture a ordem dos níveis.` : `Mantenha todas as questões no nível de dificuldade "${proDificuldade}", adequado à série.`}
 TIPOS DE QUESTÃO, QUANTIDADES, ORDEM E ÁREA DE RESPOSTA (siga EXATAMENTE):
 - ${descricaoTiposPro}
 ${proGabarito ? "INCLUIR GABARITO" : "SEM GABARITO"}
@@ -425,10 +427,10 @@ ADAPTAÇÕES ESPECIAIS — adapte a atividade considerando:
 ${proNecessidades.map(n => `- ${n}`).join("\n")}
 
 Orientações:
-- Dificuldade de leitura: enunciados curtos, palavras simples, priorizar visual.
-- TDAH: questões diretas, uma instrução por vez, variar tipos.
+- Dificuldade de leitura: enunciados curtos, palavras simples, evitar blocos longos e priorizar apoio visual.
+- TDAH: questões diretas, uma instrução por vez, atividade mais curta e tipos variados.
 - TEA: comandos literais, evitar figuras de linguagem, roteiro previsível, apoio visual.
-- Deficiência intelectual: reduzir complexidade, imagens de apoio, linguagem concreta.
+- Deficiência intelectual: reduzir complexidade, usar imagens de apoio, repetir padrões e adotar linguagem concreta.
 - Alfabetização em processo: letras maiúsculas, frases curtas, apoio de imagem.
 - Comandos mais curtos: uma ação por enunciado.
 Aplique APENAS as relevantes.` : ""}
@@ -449,17 +451,19 @@ REGRAS IMPORTANTES:
 - Para esse tipo, use "alternativas": null.
 - Informe as correspondências apenas em "resposta", no formato "1-C, 2-A, 3-B".
 5. NENHUMA questão pode exigir conhecimento que não esteja no texto base (exceto "Desenhe" e criatividade).
-6. Enunciados objetivos, claros e curtos, adequados à faixa etária.
-7. Adapte a linguagem e complexidade à série.
-8. Use linguagem acolhedora e motivadora.
-9. Numere todas as questões sequencialmente.
-10. Respeite EXATAMENTE os tipos, as quantidades e a ordem solicitados. Em cada questão, informe "areaResposta" com o valor configurado para seu tipo.
-11. IMAGENS: Marque EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS. Inclua "com textos em português" no prompt. As outras: "precisaImagem": false e "promptImagem": null.
-12. NUNCA destaque, marque ou revele a resposta correta no enunciado ou nas alternativas. Não use asteriscos de Markdown, negrito, itálico, letras maiúsculas diferentes, símbolos ou qualquer formatação que entregue a resposta ao aluno.
-${solicitouCacaPalavras ? `13. CAÇA-PALAVRAS:
+6. Questões de PROCURE NO TEXTO devem pedir que o aluno localize uma informação claramente presente no texto base.
+7. Para "Desenhe" e "Use sua criatividade", crie comandos estimulantes relacionados ao tema do texto, sem exigir uma única resposta factual.
+8. Enunciados objetivos, claros e curtos, adequados à faixa etária.
+9. Adapte a linguagem e complexidade à série.
+10. Use linguagem acolhedora e motivadora.
+11. Numere todas as questões sequencialmente.
+12. Respeite EXATAMENTE os tipos, as quantidades e a ordem solicitados. Em cada questão, informe "areaResposta" com o valor configurado para seu tipo.
+13. IMAGENS: Marque EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS. Inclua "com textos em português" no prompt. As outras: "precisaImagem": false e "promptImagem": null.
+14. NUNCA destaque, marque ou revele a resposta correta no enunciado ou nas alternativas. Todas as opções A, B e C devem ter EXATAMENTE a mesma formatação. Não use asteriscos de Markdown, negrito, itálico, letras maiúsculas diferentes, símbolos ou qualquer formatação que entregue a resposta ao aluno.
+${solicitouCacaPalavras ? `15. CAÇA-PALAVRAS:
 - Para cada questão desse tipo, use "tipo": "caca_palavras" e preencha "cacaPalavras" com 6 a 10 palavras importantes retiradas EXATAMENTE do texto base.
 - Retorne somente a lista em "palavras" e o "tamanho" entre 10 e 14. O sistema montará a grade; não escreva a grade no enunciado.
-- Use palavras sem espaços, preferencialmente substantivos relevantes ao tema.` : "13. Nas questões que não forem caça-palavras, use \"cacaPalavras\": null."}
+- Use palavras sem espaços, com no máximo 16 letras, preferencialmente substantivos relevantes ao tema.` : "15. Nas questões que não forem caça-palavras, use \"cacaPalavras\": null."}
 
 Responda APENAS com JSON válido, sem markdown, neste formato:
 {
@@ -848,6 +852,14 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       minHeight: "100vh",
       transition: "background 0.3s",
     }}>
+      <style>{`
+        .creator-split { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr); gap: 24px; align-items: start; }
+        .creator-preview { position: sticky; top: 24px; }
+        @media (max-width: 900px) {
+          .creator-split { grid-template-columns: 1fr; }
+          .creator-preview { position: static; }
+        }
+      `}</style>
 
       {/* Header horizontal com nav pills */}
       <header style={{
@@ -1262,7 +1274,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
         {/* Gerador de Atividades */}
         {/* GERADOR PRO */}
         {pagina === "pro" && (
-          <div style={{ maxWidth: 560, margin: "0 auto", padding: "24px 16px 40px" }}>
+          <div style={{ maxWidth: proStep === 2 ? 1180 : 560, margin: "0 auto", padding: "24px 16px 40px", transition: "max-width .25s ease" }}>
 
             {proStep === 1 && (
               <div>
@@ -1349,7 +1361,8 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
             )}
 
             {proStep === 2 && (
-              <div>
+              <div className="creator-split">
+                <div>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
                   🚀 Configurações PRO
                 </h2>
@@ -1511,6 +1524,45 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
                     <style>{`@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
                   </div>
                 )}
+                </div>
+
+                <aside className="creator-preview" style={{ background: cores.card, border: `1px solid ${cores.cardBorder}`, borderRadius: 16, overflow: "hidden", boxShadow: dk ? "0 12px 30px rgba(0,0,0,.22)" : "0 12px 30px rgba(42,37,31,.08)" }}>
+                  <div style={{ padding: "18px 20px", background: "#1F3A3D", color: "white" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", opacity: .75, textTransform: "uppercase" }}>Prévia da criação</div>
+                    <div style={{ fontSize: 19, fontWeight: 700, marginTop: 5 }}>{proTema || "Tema da atividade"}</div>
+                    <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>{proDisciplina} • {proAlunoSelecionado?.serie || proSerie}</div>
+                  </div>
+                  <div style={{ padding: 20 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginBottom: 18 }}>
+                      {[
+                        [Object.values(proTipos).reduce((total, quantidade) => total + quantidade, 0), "questões"],
+                        [{ sem: 0, poucas: 1, algumas: 3, muitas: 5 }[proImagens] ?? 0, "imagens"],
+                        [proDificuldade === "progressivo" ? "Progressiva" : proDificuldade, "dificuldade"],
+                        [proGabarito ? "Sim" : "Não", "gabarito"],
+                      ].map(([valor, rotulo]) => (
+                        <div key={rotulo} style={{ padding: "11px 12px", borderRadius: 10, background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}` }}>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: cores.text, textTransform: "capitalize" }}>{valor}</div>
+                          <div style={{ fontSize: 10, color: cores.textSub, marginTop: 2 }}>{rotulo}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: cores.text, marginBottom: 9 }}>Estrutura da atividade</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                      {Object.entries(proTipos).filter(([, quantidade]) => quantidade > 0).sort(([idA], [idB]) => (proTiposOrdem[idA] || 99) - (proTiposOrdem[idB] || 99)).map(([id, quantidade], indice) => {
+                        const tipo = TIPOS_QUESTAO.find((item) => item.id === id);
+                        return (
+                          <div key={id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 10px", borderRadius: 9, border: `1px solid ${cores.cardBorder}`, color: cores.text }}>
+                            <span style={{ width: 22, height: 22, display: "grid", placeItems: "center", borderRadius: 6, background: "#E1EDE9", color: "#1F3A3D", fontSize: 11, fontWeight: 800 }}>{indice + 1}</span>
+                            <span style={{ flex: 1, fontSize: 12, fontWeight: 600 }}>{id === "outro" ? (proOutroTexto || "Tipo personalizado") : `${tipo?.icon || ""} ${tipo?.label || id}`}</span>
+                            <strong style={{ fontSize: 12 }}>{quantidade}×</strong>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {proNecessidades.length > 0 && <div style={{ marginTop: 15, padding: "10px 12px", borderRadius: 9, background: dk ? "#2E302A" : "#FFF7E2", color: cores.text, fontSize: 11, lineHeight: 1.5 }}><strong>Adaptações:</strong> {proNecessidades.join(", ")}</div>}
+                    <p style={{ fontSize: 11, lineHeight: 1.5, color: cores.textSub, margin: "16px 0 0" }}>A atividade terá texto-base e será montada no Word com essas configurações.</p>
+                  </div>
+                </aside>
               </div>
             )}
 
@@ -1652,7 +1704,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
 
         {/* Gerador de Atividades (original) */}
         {pagina === "gerador" && (
-      <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px 40px" }}>
+      <div style={{ maxWidth: step === 3 ? 1180 : 520, margin: "0 auto", padding: "20px 16px 40px", transition: "max-width .25s ease" }}>
         {step < 4 && (
           <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
             {[1, 2, 3].map((s) => (
@@ -1914,7 +1966,8 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
         )}
 
         {step === 3 && (
-          <div>
+          <div className="creator-split">
+            <div>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
               Tipos de Questão
             </h2>
@@ -2280,6 +2333,45 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
                 <style>{`@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
               </div>
             )}
+            </div>
+
+            <aside className="creator-preview" style={{ background: cores.card, border: `1px solid ${cores.cardBorder}`, borderRadius: 16, overflow: "hidden", boxShadow: dk ? "0 12px 30px rgba(0,0,0,.22)" : "0 12px 30px rgba(42,37,31,.08)" }}>
+              <div style={{ padding: "18px 20px", background: "#1F3A3D", color: "white" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", opacity: .75, textTransform: "uppercase" }}>Prévia da criação</div>
+                <div style={{ fontSize: 19, fontWeight: 700, marginTop: 5 }}>{tema || "Tema da atividade"}</div>
+                <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>{disciplina} • {serie}</div>
+              </div>
+              <div style={{ padding: 20 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginBottom: 18 }}>
+                  {[
+                    [Object.values(tipos).reduce((total, quantidade) => total + quantidade, 0), "questões"],
+                    [progressao ? "Progressiva" : "Padrão", "dificuldade"],
+                    [gabarito ? "Sim" : "Não", "gabarito"],
+                    [alunosLote.length || (alunoSelecionado ? 1 : 0) || 1, "aluno(s)"],
+                  ].map(([valor, rotulo]) => (
+                    <div key={rotulo} style={{ padding: "11px 12px", borderRadius: 10, background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}` }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: cores.text }}>{valor}</div>
+                      <div style={{ fontSize: 10, color: cores.textSub, marginTop: 2 }}>{rotulo}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: cores.text, marginBottom: 9 }}>Estrutura da atividade</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {Object.entries(tipos).filter(([, quantidade]) => quantidade > 0).sort(([idA], [idB]) => (tiposOrdem[idA] || 99) - (tiposOrdem[idB] || 99)).map(([id, quantidade], indice) => {
+                    const tipo = TIPOS_QUESTAO.find((item) => item.id === id);
+                    return (
+                      <div key={id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 10px", borderRadius: 9, border: `1px solid ${cores.cardBorder}`, color: cores.text }}>
+                        <span style={{ width: 22, height: 22, display: "grid", placeItems: "center", borderRadius: 6, background: "#E1EDE9", color: "#1F3A3D", fontSize: 11, fontWeight: 800 }}>{indice + 1}</span>
+                        <span style={{ flex: 1, fontSize: 12, fontWeight: 600 }}>{id === "outro" ? (outroTexto || "Tipo personalizado") : `${tipo?.icon || ""} ${tipo?.label || id}`}</span>
+                        <strong style={{ fontSize: 12 }}>{quantidade}×</strong>
+                      </div>
+                    );
+                  })}
+                </div>
+                {necessidades.length > 0 && <div style={{ marginTop: 15, padding: "10px 12px", borderRadius: 9, background: dk ? "#2E302A" : "#FFF7E2", color: cores.text, fontSize: 11, lineHeight: 1.5 }}><strong>Adaptações:</strong> {necessidades.join(", ")}</div>}
+                <p style={{ fontSize: 11, lineHeight: 1.5, color: cores.textSub, margin: "16px 0 0" }}>A prévia acompanha suas escolhas antes da geração.</p>
+              </div>
+            </aside>
           </div>
         )}
 
@@ -2323,4 +2415,3 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
     </div>
   );
 }
-
