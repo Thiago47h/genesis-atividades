@@ -7,6 +7,7 @@ import { renderMarkdown } from "./utils/markdown.js";
 import { buildWordHeader } from "./utils/wordHeader.js";
 import { downloadProActivityDocx, downloadStandardActivityDocx } from "./utils/wordDocx.js";
 import { normalizeProActivity } from "./utils/wordSearch.js";
+import { composeActivityMarkdown, parseActivityMarkdown } from "./utils/activityEditor.js";
 
 export default function App() {
   // Autenticação
@@ -99,6 +100,10 @@ export default function App() {
   const [gabarito, setGabarito] = useState(true);
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState("");
+  const [editorAtividade, setEditorAtividade] = useState(null);
+  const [questaoEditando, setQuestaoEditando] = useState(null);
+  const [arrastandoQuestao, setArrastandoQuestao] = useState(null);
+  const [editandoIntroducao, setEditandoIntroducao] = useState(false);
   const [error, setError] = useState("");
   const [outroTexto, setOutroTexto] = useState("");
   const [tiposArea, setTiposArea] = useState({});
@@ -153,6 +158,32 @@ export default function App() {
   const [modoEscuro, setModoEscuro] = useState(false);
   const [pagina, setPagina] = useState("dashboard");
   const [sidebarAberta, setSidebarAberta] = useState(false);
+
+  useEffect(() => {
+    if (step === 4 && resultado) setEditorAtividade(parseActivityMarkdown(resultado));
+  }, [step]);
+
+  const atualizarEditorAtividade = (proximo) => {
+    setEditorAtividade(proximo);
+    setResultado(composeActivityMarkdown(proximo));
+  };
+
+  const moverQuestao = (origem, destino) => {
+    if (!editorAtividade || destino < 0 || destino >= editorAtividade.questions.length || origem === destino) return;
+    const questions = [...editorAtividade.questions];
+    const [movida] = questions.splice(origem, 1);
+    questions.splice(destino, 0, movida);
+    atualizarEditorAtividade({ ...editorAtividade, questions });
+    setQuestaoEditando(null);
+  };
+
+  const adicionarQuestao = () => {
+    if (!editorAtividade) return;
+    const numero = editorAtividade.questions.length + 1;
+    const questions = [...editorAtividade.questions, `## Questão ${numero}\n\nDigite aqui o enunciado da nova questão.\n\nA) \n\nB) \n\nC) `];
+    atualizarEditorAtividade({ ...editorAtividade, questions });
+    setQuestaoEditando(questions.length - 1);
+  };
 
   // Supabase - Alunos
   const [alunos, setAlunos] = useState([]);
@@ -899,6 +930,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
         @media (max-width: 900px) {
           .creator-split { grid-template-columns: 1fr; }
           .creator-preview { position: static; }
+          .activity-editor-layout { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
@@ -1745,7 +1777,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
 
         {/* Gerador de Atividades (original) */}
         {pagina === "gerador" && (
-      <div style={{ maxWidth: step === 3 ? 1180 : 520, margin: "0 auto", padding: "20px 16px 40px", transition: "max-width .25s ease" }}>
+      <div style={{ maxWidth: step === 3 || step === 4 ? 1240 : 520, margin: "0 auto", padding: "20px 16px 40px", transition: "max-width .25s ease" }}>
         {step < 4 && (
           <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
             {[1, 2, 3].map((s) => (
@@ -2417,14 +2449,15 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
         )}
 
         {step === 4 && resultado && (
-          <div>
+          <div className="activity-editor-layout" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 350px", gap: 24, alignItems: "start" }}>
+            <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               <span style={{ background: dk ? "#2E3530" : "#E1EDE9", color: dk ? "#7BA896" : "#1F3A3D", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{serie}</span>
               <span style={{ background: dk ? "#2E2540" : "#f0e8f8", color: dk ? "#B88FD0" : "#5b2580", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{disciplina}</span>
               <span style={{ background: dk ? "#3A3020" : "#fff7d6", color: dk ? "#D4A84A" : "#7a5700", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{tema}</span>
             </div>
             <div style={{
-              background: "#fff", padding: "28px 24px", borderRadius: 12,
+              background: "#fff", padding: "36px 40px", borderRadius: 12,
               border: "1px solid #ddd", fontSize: 14, lineHeight: 1.7,
               color: "#222", whiteSpace: "pre-wrap", boxShadow: dk ? "0 4px 20px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.04)",
             }}>
@@ -2449,6 +2482,48 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
               style={{ ...backBtnStyle, width: "100%", marginTop: 10, textAlign: "center", justifyContent: "center" }}>
               🔄 Gerar outra versão (mesmo tema)
             </button>
+            </div>
+
+            <aside className="creator-preview" style={{ position: "sticky", top: 24, background: cores.card, border: `1px solid ${cores.cardBorder}`, borderRadius: 16, overflow: "hidden", boxShadow: dk ? "0 12px 30px rgba(0,0,0,.22)" : "0 12px 30px rgba(42,37,31,.08)" }}>
+              <div style={{ padding: "18px 20px", background: "#1F3A3D", color: "white" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", opacity: .75, textTransform: "uppercase" }}>Editor da atividade</div>
+                <div style={{ fontSize: 19, fontWeight: 700, marginTop: 5 }}>{tema}</div>
+                <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>{disciplina} • {serie}</div>
+              </div>
+              <div style={{ padding: 18 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 15 }}>
+                  <div style={{ padding: 10, borderRadius: 9, background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}` }}><strong style={{ display: "block", color: cores.text, fontSize: 17 }}>{editorAtividade?.questions.length || 0}</strong><span style={{ fontSize: 10, color: cores.textSub }}>questões</span></div>
+                  <div style={{ padding: 10, borderRadius: 9, background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}` }}><strong style={{ display: "block", color: cores.text, fontSize: 17 }}>{gabarito ? "Sim" : "Não"}</strong><span style={{ fontSize: 10, color: cores.textSub }}>gabarito</span></div>
+                </div>
+
+                <button onClick={() => setEditandoIntroducao(!editandoIntroducao)} style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: `1px solid ${cores.cardBorder}`, background: cores.card, color: cores.text, cursor: "pointer", fontSize: 12, fontWeight: 700, marginBottom: 10 }}>✏️ Editar título e texto-base</button>
+                {editandoIntroducao && editorAtividade && (
+                  <textarea value={editorAtividade.intro} onChange={(event) => atualizarEditorAtividade({ ...editorAtividade, intro: event.target.value })} style={{ ...inputStyle, minHeight: 180, resize: "vertical", fontSize: 11, lineHeight: 1.5, marginBottom: 12 }} />
+                )}
+
+                <div style={{ fontSize: 12, fontWeight: 700, color: cores.text, marginBottom: 8 }}>Organizar questões</div>
+                <p style={{ fontSize: 10, lineHeight: 1.45, color: cores.textSub, margin: "0 0 10px" }}>Arraste os cartões ou use as setas. A numeração é corrigida automaticamente.</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7, maxHeight: 430, overflowY: "auto", paddingRight: 2 }}>
+                  {(editorAtividade?.questions || []).map((question, index) => (
+                    <div key={index} draggable onDragStart={() => setArrastandoQuestao(index)} onDragOver={(event) => event.preventDefault()} onDrop={() => { moverQuestao(arrastandoQuestao, index); setArrastandoQuestao(null); }} style={{ padding: 9, borderRadius: 9, border: `1px solid ${questaoEditando === index ? "#1F3A3D" : cores.cardBorder}`, background: questaoEditando === index ? cores.cardActiveBg : cores.areaSubBg, cursor: "grab" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <span style={{ color: cores.textSub, fontSize: 13 }}>⠿</span>
+                        <strong style={{ flex: 1, color: cores.text, fontSize: 11 }}>Questão {index + 1}</strong>
+                        <button onClick={() => moverQuestao(index, index - 1)} disabled={index === 0} title="Mover para cima" style={{ border: "none", background: "transparent", color: cores.text, cursor: index === 0 ? "default" : "pointer", opacity: index === 0 ? .3 : 1 }}>↑</button>
+                        <button onClick={() => moverQuestao(index, index + 1)} disabled={index === editorAtividade.questions.length - 1} title="Mover para baixo" style={{ border: "none", background: "transparent", color: cores.text, cursor: index === editorAtividade.questions.length - 1 ? "default" : "pointer", opacity: index === editorAtividade.questions.length - 1 ? .3 : 1 }}>↓</button>
+                        <button onClick={() => setQuestaoEditando(questaoEditando === index ? null : index)} title="Editar" style={{ border: "none", background: "transparent", cursor: "pointer" }}>✏️</button>
+                        <button onClick={() => { const questions = editorAtividade.questions.filter((_, questionIndex) => questionIndex !== index); atualizarEditorAtividade({ ...editorAtividade, questions }); setQuestaoEditando(null); }} title="Excluir" style={{ border: "none", background: "transparent", cursor: "pointer" }}>🗑️</button>
+                      </div>
+                      {questaoEditando === index && (
+                        <textarea value={question} onChange={(event) => { const questions = [...editorAtividade.questions]; questions[index] = event.target.value; atualizarEditorAtividade({ ...editorAtividade, questions }); }} style={{ ...inputStyle, minHeight: 150, resize: "vertical", fontSize: 11, lineHeight: 1.5, marginTop: 8 }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button onClick={adicionarQuestao} style={{ ...nextBtnStyle, marginTop: 12, padding: "10px 12px", fontSize: 12 }}>＋ Acrescentar questão</button>
+                <p style={{ fontSize: 10, lineHeight: 1.45, color: cores.textSub, margin: "12px 0 0" }}>As alterações feitas aqui também serão usadas no arquivo Word.</p>
+              </div>
+            </aside>
           </div>
         )}
       </div>
