@@ -852,6 +852,14 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       minHeight: "100vh",
       transition: "background 0.3s",
     }}>
+      <style>{`
+        .creator-split { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr); gap: 24px; align-items: start; }
+        .creator-preview { position: sticky; top: 24px; }
+        @media (max-width: 900px) {
+          .creator-split { grid-template-columns: 1fr; }
+          .creator-preview { position: static; }
+        }
+      `}</style>
 
       {/* Header horizontal com nav pills */}
       <header style={{
@@ -1266,7 +1274,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
         {/* Gerador de Atividades */}
         {/* GERADOR PRO */}
         {pagina === "pro" && (
-          <div style={{ maxWidth: 560, margin: "0 auto", padding: "24px 16px 40px" }}>
+          <div style={{ maxWidth: proStep === 2 ? 1180 : 560, margin: "0 auto", padding: "24px 16px 40px", transition: "max-width .25s ease" }}>
 
             {proStep === 1 && (
               <div>
@@ -1353,7 +1361,8 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
             )}
 
             {proStep === 2 && (
-              <div>
+              <div className="creator-split">
+                <div>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
                   🚀 Configurações PRO
                 </h2>
@@ -1515,6 +1524,45 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
                     <style>{`@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
                   </div>
                 )}
+                </div>
+
+                <aside className="creator-preview" style={{ background: cores.card, border: `1px solid ${cores.cardBorder}`, borderRadius: 16, overflow: "hidden", boxShadow: dk ? "0 12px 30px rgba(0,0,0,.22)" : "0 12px 30px rgba(42,37,31,.08)" }}>
+                  <div style={{ padding: "18px 20px", background: "#1F3A3D", color: "white" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", opacity: .75, textTransform: "uppercase" }}>Prévia da criação</div>
+                    <div style={{ fontSize: 19, fontWeight: 700, marginTop: 5 }}>{proTema || "Tema da atividade"}</div>
+                    <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>{proDisciplina} • {proAlunoSelecionado?.serie || proSerie}</div>
+                  </div>
+                  <div style={{ padding: 20 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginBottom: 18 }}>
+                      {[
+                        [Object.values(proTipos).reduce((total, quantidade) => total + quantidade, 0), "questões"],
+                        [{ sem: 0, poucas: 1, algumas: 3, muitas: 5 }[proImagens] ?? 0, "imagens"],
+                        [proDificuldade === "progressivo" ? "Progressiva" : proDificuldade, "dificuldade"],
+                        [proGabarito ? "Sim" : "Não", "gabarito"],
+                      ].map(([valor, rotulo]) => (
+                        <div key={rotulo} style={{ padding: "11px 12px", borderRadius: 10, background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}` }}>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: cores.text, textTransform: "capitalize" }}>{valor}</div>
+                          <div style={{ fontSize: 10, color: cores.textSub, marginTop: 2 }}>{rotulo}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: cores.text, marginBottom: 9 }}>Estrutura da atividade</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                      {Object.entries(proTipos).filter(([, quantidade]) => quantidade > 0).sort(([idA], [idB]) => (proTiposOrdem[idA] || 99) - (proTiposOrdem[idB] || 99)).map(([id, quantidade], indice) => {
+                        const tipo = TIPOS_QUESTAO.find((item) => item.id === id);
+                        return (
+                          <div key={id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 10px", borderRadius: 9, border: `1px solid ${cores.cardBorder}`, color: cores.text }}>
+                            <span style={{ width: 22, height: 22, display: "grid", placeItems: "center", borderRadius: 6, background: "#E1EDE9", color: "#1F3A3D", fontSize: 11, fontWeight: 800 }}>{indice + 1}</span>
+                            <span style={{ flex: 1, fontSize: 12, fontWeight: 600 }}>{id === "outro" ? (proOutroTexto || "Tipo personalizado") : `${tipo?.icon || ""} ${tipo?.label || id}`}</span>
+                            <strong style={{ fontSize: 12 }}>{quantidade}×</strong>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {proNecessidades.length > 0 && <div style={{ marginTop: 15, padding: "10px 12px", borderRadius: 9, background: dk ? "#2E302A" : "#FFF7E2", color: cores.text, fontSize: 11, lineHeight: 1.5 }}><strong>Adaptações:</strong> {proNecessidades.join(", ")}</div>}
+                    <p style={{ fontSize: 11, lineHeight: 1.5, color: cores.textSub, margin: "16px 0 0" }}>A atividade terá texto-base e será montada no Word com essas configurações.</p>
+                  </div>
+                </aside>
               </div>
             )}
 
@@ -1656,7 +1704,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
 
         {/* Gerador de Atividades (original) */}
         {pagina === "gerador" && (
-      <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px 40px" }}>
+      <div style={{ maxWidth: step === 3 ? 1180 : 520, margin: "0 auto", padding: "20px 16px 40px", transition: "max-width .25s ease" }}>
         {step < 4 && (
           <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
             {[1, 2, 3].map((s) => (
@@ -1918,7 +1966,8 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
         )}
 
         {step === 3 && (
-          <div>
+          <div className="creator-split">
+            <div>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
               Tipos de Questão
             </h2>
@@ -2284,6 +2333,45 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
                 <style>{`@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
               </div>
             )}
+            </div>
+
+            <aside className="creator-preview" style={{ background: cores.card, border: `1px solid ${cores.cardBorder}`, borderRadius: 16, overflow: "hidden", boxShadow: dk ? "0 12px 30px rgba(0,0,0,.22)" : "0 12px 30px rgba(42,37,31,.08)" }}>
+              <div style={{ padding: "18px 20px", background: "#1F3A3D", color: "white" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", opacity: .75, textTransform: "uppercase" }}>Prévia da criação</div>
+                <div style={{ fontSize: 19, fontWeight: 700, marginTop: 5 }}>{tema || "Tema da atividade"}</div>
+                <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>{disciplina} • {serie}</div>
+              </div>
+              <div style={{ padding: 20 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginBottom: 18 }}>
+                  {[
+                    [Object.values(tipos).reduce((total, quantidade) => total + quantidade, 0), "questões"],
+                    [progressao ? "Progressiva" : "Padrão", "dificuldade"],
+                    [gabarito ? "Sim" : "Não", "gabarito"],
+                    [alunosLote.length || (alunoSelecionado ? 1 : 0) || 1, "aluno(s)"],
+                  ].map(([valor, rotulo]) => (
+                    <div key={rotulo} style={{ padding: "11px 12px", borderRadius: 10, background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}` }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: cores.text }}>{valor}</div>
+                      <div style={{ fontSize: 10, color: cores.textSub, marginTop: 2 }}>{rotulo}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: cores.text, marginBottom: 9 }}>Estrutura da atividade</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {Object.entries(tipos).filter(([, quantidade]) => quantidade > 0).sort(([idA], [idB]) => (tiposOrdem[idA] || 99) - (tiposOrdem[idB] || 99)).map(([id, quantidade], indice) => {
+                    const tipo = TIPOS_QUESTAO.find((item) => item.id === id);
+                    return (
+                      <div key={id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 10px", borderRadius: 9, border: `1px solid ${cores.cardBorder}`, color: cores.text }}>
+                        <span style={{ width: 22, height: 22, display: "grid", placeItems: "center", borderRadius: 6, background: "#E1EDE9", color: "#1F3A3D", fontSize: 11, fontWeight: 800 }}>{indice + 1}</span>
+                        <span style={{ flex: 1, fontSize: 12, fontWeight: 600 }}>{id === "outro" ? (outroTexto || "Tipo personalizado") : `${tipo?.icon || ""} ${tipo?.label || id}`}</span>
+                        <strong style={{ fontSize: 12 }}>{quantidade}×</strong>
+                      </div>
+                    );
+                  })}
+                </div>
+                {necessidades.length > 0 && <div style={{ marginTop: 15, padding: "10px 12px", borderRadius: 9, background: dk ? "#2E302A" : "#FFF7E2", color: cores.text, fontSize: 11, lineHeight: 1.5 }}><strong>Adaptações:</strong> {necessidades.join(", ")}</div>}
+                <p style={{ fontSize: 11, lineHeight: 1.5, color: cores.textSub, margin: "16px 0 0" }}>A prévia acompanha suas escolhas antes da geração.</p>
+              </div>
+            </aside>
           </div>
         )}
 
