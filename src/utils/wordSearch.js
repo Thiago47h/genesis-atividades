@@ -29,7 +29,7 @@ function seededLetter(seed, row, column) {
 }
 
 export function buildWordSearch(words, requestedSize) {
-  const normalizedWords = [...new Set((words || []).map(normalizeWordSearchWord).filter((word) => word.length >= 2))]
+  const normalizedWords = [...new Set((words || []).map(normalizeWordSearchWord).filter((word) => word.length >= 2 && word.length <= 16))]
     .slice(0, 12);
   const longest = Math.max(0, ...normalizedWords.map((word) => word.length));
   const size = Math.max(8, Math.min(16, Number(requestedSize) || Math.max(longest + 2, 10)));
@@ -38,10 +38,23 @@ export function buildWordSearch(words, requestedSize) {
 
   normalizedWords.sort((a, b) => b.length - a.length).forEach((word, wordIndex) => {
     let placed = false;
-    for (let attempt = 0; attempt < size * size * DIRECTIONS.length && !placed; attempt += 1) {
-      const direction = DIRECTIONS[(seed + wordIndex + attempt) % DIRECTIONS.length];
-      const row = (seed + wordIndex * 7 + attempt * 3) % size;
-      const column = (seed + wordIndex * 11 + attempt * 5) % size;
+    const candidates = [];
+    for (let row = 0; row < size; row += 1) {
+      for (let column = 0; column < size; column += 1) {
+        for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex += 1) {
+          candidates.push({ row, column, directionIndex });
+        }
+      }
+    }
+    candidates.sort((a, b) => {
+      const scoreA = hashText(`${seed}|${wordIndex}|${a.row}|${a.column}|${a.directionIndex}`);
+      const scoreB = hashText(`${seed}|${wordIndex}|${b.row}|${b.column}|${b.directionIndex}`);
+      return scoreA - scoreB;
+    });
+    for (const candidate of candidates) {
+      if (placed) break;
+      const { row, column } = candidate;
+      const direction = DIRECTIONS[candidate.directionIndex];
       const endRow = row + direction[0] * (word.length - 1);
       const endColumn = column + direction[1] * (word.length - 1);
       if (endRow < 0 || endRow >= size || endColumn < 0 || endColumn >= size) continue;
@@ -70,7 +83,7 @@ export function normalizeProActivity(activity) {
         ...question,
         cacaPalavras: {
           ...question.cacaPalavras,
-          palavras: [...new Set(words.map(normalizeWordSearchWord).filter(Boolean))],
+          palavras: [...new Set(words.map(normalizeWordSearchWord).filter((word) => word.length >= 2 && word.length <= 16))],
           grade: buildWordSearch(words, question.cacaPalavras.tamanho),
         },
       };
