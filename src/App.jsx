@@ -41,21 +41,9 @@ export default function App() {
       } else if (event === "SIGNED_OUT" || event === "USER_DELETED") {
         if (logoutIntencional.current || event === "USER_DELETED") {
           setUsuario(null);
-          return;
         }
-
-        // Alguns navegadores disparam SIGNED_OUT durante uma troca momentânea
-        // do token. Aguarde e confirme antes de remover o usuário da tela.
-        window.setTimeout(async () => {
-          if (!ativo || logoutIntencional.current) return;
-          const { data: { session: sessaoRecuperada } } = await supabase.auth.getSession();
-          if (sessaoRecuperada?.user) {
-            setUsuario(sessaoRecuperada.user);
-            return;
-          }
-          setUsuario(null);
-          setLoginErro("Sua sessão expirou. Entre novamente para continuar.");
-        }, 3000);
+        // Não interrompa o trabalho por expiração ou falha automática de
+        // renovação. Somente o botão Sair encerra a sessão visível do app.
       }
     });
 
