@@ -162,6 +162,9 @@ export default function App() {
   const [proLoading, setProLoading] = useState(false);
   const [proLoadingMsg, setProLoadingMsg] = useState("");
   const [proResultado, setProResultado] = useState(null);
+  const [proQuestaoEditando, setProQuestaoEditando] = useState(null);
+  const [proArrastandoQuestao, setProArrastandoQuestao] = useState(null);
+  const [proEditandoTextoBase, setProEditandoTextoBase] = useState(false);
   const [proImgsGeradas, setProImgsGeradas] = useState({});
   const [proError, setProError] = useState("");
   const [necessidades, setNecessidades] = useState([]);
@@ -169,6 +172,61 @@ export default function App() {
   const [modoEscuro, setModoEscuro] = useState(false);
   const [pagina, setPagina] = useState("dashboard");
   const [sidebarAberta, setSidebarAberta] = useState(false);
+
+  const atualizarQuestoesPro = (questoes) => {
+    const novasImagens = {};
+    const renumeradas = questoes.map((questao, index) => {
+      const novoNumero = index + 1;
+      if (proImgsGeradas[questao.numero]) novasImagens[novoNumero] = proImgsGeradas[questao.numero];
+      return { ...questao, numero: novoNumero };
+    });
+    setProResultado((anterior) => ({
+      ...anterior,
+      questoes: renumeradas,
+      gabarito: proGabarito ? renumeradas.map((questao) => `${questao.numero}) ${questao.resposta || "Resposta a definir"}`) : null,
+    }));
+    setProImgsGeradas(novasImagens);
+  };
+
+  const moverQuestaoPro = (origem, destino) => {
+    if (!proResultado || origem === null || destino < 0 || destino >= proResultado.questoes.length || origem === destino) return;
+    const questoes = [...proResultado.questoes];
+    const [movida] = questoes.splice(origem, 1);
+    questoes.splice(destino, 0, movida);
+    atualizarQuestoesPro(questoes);
+    setProQuestaoEditando(null);
+  };
+
+  const editarQuestaoPro = (index, alteracoes) => {
+    setProResultado((anterior) => {
+      const questoes = anterior.questoes.map((questao, questionIndex) => questionIndex === index ? { ...questao, ...alteracoes } : questao);
+      return {
+        ...anterior,
+        questoes,
+        gabarito: proGabarito ? questoes.map((questao) => `${questao.numero}) ${questao.resposta || "Resposta a definir"}`) : null,
+      };
+    });
+  };
+
+  const adicionarQuestaoPro = () => {
+    if (!proResultado) return;
+    const numero = proResultado.questoes.length + 1;
+    const questoes = [...proResultado.questoes, {
+      numero,
+      tipo: "multipla_escolha",
+      enunciado: "Digite aqui o enunciado da nova questão.",
+      areaResposta: "media",
+      colunaA: null,
+      colunaB: null,
+      cacaPalavras: null,
+      precisaImagem: false,
+      promptImagem: null,
+      alternativas: ["A) ", "B) ", "C) "],
+      resposta: "",
+    }];
+    atualizarQuestoesPro(questoes);
+    setProQuestaoEditando(numero - 1);
+  };
 
   useEffect(() => {
     if (step === 4 && resultado) setEditorAtividade(parseActivityMarkdown(resultado));
@@ -1358,7 +1416,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
         {/* Gerador de Atividades */}
         {/* GERADOR PRO */}
         {pagina === "pro" && (
-          <div style={{ maxWidth: proStep === 2 ? 1180 : 560, margin: "0 auto", padding: "24px 16px 40px", transition: "max-width .25s ease" }}>
+          <div style={{ maxWidth: proStep === 2 || proStep === 3 ? 1240 : 560, margin: "0 auto", padding: "24px 16px 40px", transition: "max-width .25s ease" }}>
 
             {proStep === 1 && (
               <div>
@@ -1651,7 +1709,8 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
             )}
 
             {proStep === 3 && proResultado && (
-              <div>
+              <div className="activity-editor-layout" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 360px", gap: 24, alignItems: "start" }}>
+                <div style={{ minWidth: 0 }}>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: cores.text, margin: "0 0 4px" }}>
                   🚀 Atividade PRO gerada!
                 </h2>
@@ -1661,8 +1720,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
                   <span style={{ background: dk ? "#3A3020" : "#fff7d6", color: dk ? "#D4A84A" : "#7a5700", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{proTema}</span>
                 </div>
 
-                <div style={{ background: "#fff", padding: "28px 24px", borderRadius: 12, border: "1px solid #ddd", color: "#222", boxShadow: dk ? "0 4px 20px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.04)" }}>
-                  <h3 style={{ fontSize: 14, color: "#1F3A3D", marginTop: 0 }}>📖 Leia o texto com atenção:</h3>
+                <div style={{ background: "#fff", padding: "36px 40px", borderRadius: 12, border: "1px solid #ddd", color: "#222", boxShadow: dk ? "0 4px 20px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.04)" }}>
                   <p style={{ lineHeight: 1.7, fontSize: 14 }}>{proResultado.textoBase}</p>
                   <hr style={{ border: "none", borderTop: "1px solid #ddd", margin: "16px 0" }} />
 
@@ -1781,6 +1839,59 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
                   style={{ ...backBtnStyle, width: "100%", marginTop: 10, textAlign: "center", justifyContent: "center" }}>
                   🔄 Gerar outra versão
                 </button>
+                </div>
+
+                <aside className="creator-preview" style={{ position: "sticky", top: 24, background: cores.card, border: `1px solid ${cores.cardBorder}`, borderRadius: 16, overflow: "hidden", boxShadow: dk ? "0 12px 30px rgba(0,0,0,.22)" : "0 12px 30px rgba(42,37,31,.08)" }}>
+                  <div style={{ padding: "18px 20px", background: "#1F3A3D", color: "white" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", opacity: .75, textTransform: "uppercase" }}>Editor PRO</div>
+                    <div style={{ fontSize: 19, fontWeight: 700, marginTop: 5 }}>{proTema}</div>
+                    <div style={{ fontSize: 12, opacity: .82, marginTop: 3 }}>{proDisciplina} • {proAlunoSelecionado?.serie || proSerie}</div>
+                  </div>
+                  <div style={{ padding: 18 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                      <div style={{ padding: 10, borderRadius: 9, background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}` }}><strong style={{ display: "block", color: cores.text, fontSize: 17 }}>{proResultado.questoes.length}</strong><span style={{ fontSize: 10, color: cores.textSub }}>questões</span></div>
+                      <div style={{ padding: 10, borderRadius: 9, background: cores.areaSubBg, border: `1px solid ${cores.cardBorder}` }}><strong style={{ display: "block", color: cores.text, fontSize: 17 }}>{Object.keys(proImgsGeradas).length}</strong><span style={{ fontSize: 10, color: cores.textSub }}>imagens</span></div>
+                    </div>
+
+                    <button onClick={() => setProEditandoTextoBase(!proEditandoTextoBase)} style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: `1px solid ${cores.cardBorder}`, background: cores.card, color: cores.text, cursor: "pointer", fontSize: 12, fontWeight: 700, marginBottom: 9 }}>✏️ Editar texto-base</button>
+                    {proEditandoTextoBase && (
+                      <textarea value={proResultado.textoBase || ""} onChange={(event) => setProResultado((anterior) => ({ ...anterior, textoBase: event.target.value }))} style={{ ...inputStyle, minHeight: 180, resize: "vertical", fontSize: 11, lineHeight: 1.5, marginBottom: 12 }} />
+                    )}
+
+                    <div style={{ fontSize: 12, fontWeight: 700, color: cores.text, marginBottom: 7 }}>Organizar questões</div>
+                    <p style={{ fontSize: 10, lineHeight: 1.45, color: cores.textSub, margin: "0 0 9px" }}>Arraste, use as setas ou abra o lápis para editar.</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 7, maxHeight: 470, overflowY: "auto", paddingRight: 2 }}>
+                      {proResultado.questoes.map((questao, index) => (
+                        <div key={`${questao.numero}-${index}`} draggable onDragStart={() => setProArrastandoQuestao(index)} onDragOver={(event) => event.preventDefault()} onDrop={() => { moverQuestaoPro(proArrastandoQuestao, index); setProArrastandoQuestao(null); }} style={{ padding: 9, borderRadius: 9, border: `1px solid ${proQuestaoEditando === index ? "#1F3A3D" : cores.cardBorder}`, background: proQuestaoEditando === index ? cores.cardActiveBg : cores.areaSubBg, cursor: "grab" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ color: cores.textSub }}>⠿</span>
+                            <strong style={{ flex: 1, color: cores.text, fontSize: 11 }}>Questão {index + 1}</strong>
+                            <button onClick={() => moverQuestaoPro(index, index - 1)} disabled={index === 0} style={{ border: "none", background: "transparent", color: cores.text, cursor: "pointer", opacity: index === 0 ? .3 : 1 }}>↑</button>
+                            <button onClick={() => moverQuestaoPro(index, index + 1)} disabled={index === proResultado.questoes.length - 1} style={{ border: "none", background: "transparent", color: cores.text, cursor: "pointer", opacity: index === proResultado.questoes.length - 1 ? .3 : 1 }}>↓</button>
+                            <button onClick={() => setProQuestaoEditando(proQuestaoEditando === index ? null : index)} style={{ border: "none", background: "transparent", cursor: "pointer" }}>✏️</button>
+                            <button onClick={() => { atualizarQuestoesPro(proResultado.questoes.filter((_, questionIndex) => questionIndex !== index)); setProQuestaoEditando(null); }} style={{ border: "none", background: "transparent", cursor: "pointer" }}>🗑️</button>
+                          </div>
+                          {proQuestaoEditando === index && (
+                            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 7 }}>
+                              <label style={{ fontSize: 10, color: cores.textSub }}>Enunciado</label>
+                              <textarea value={questao.enunciado || ""} onChange={(event) => editarQuestaoPro(index, { enunciado: event.target.value })} style={{ ...inputStyle, minHeight: 80, resize: "vertical", fontSize: 11 }} />
+                              {Array.isArray(questao.alternativas) && (
+                                <><label style={{ fontSize: 10, color: cores.textSub }}>Alternativas — uma por linha</label><textarea value={questao.alternativas.join("\n")} onChange={(event) => editarQuestaoPro(index, { alternativas: event.target.value.split("\n") })} style={{ ...inputStyle, minHeight: 85, resize: "vertical", fontSize: 11 }} /></>
+                              )}
+                              {Array.isArray(questao.colunaA) && Array.isArray(questao.colunaB) && (
+                                <><label style={{ fontSize: 10, color: cores.textSub }}>Coluna A — uma por linha</label><textarea value={questao.colunaA.join("\n")} onChange={(event) => editarQuestaoPro(index, { colunaA: event.target.value.split("\n") })} style={{ ...inputStyle, minHeight: 75, resize: "vertical", fontSize: 11 }} /><label style={{ fontSize: 10, color: cores.textSub }}>Coluna B — uma por linha</label><textarea value={questao.colunaB.join("\n")} onChange={(event) => editarQuestaoPro(index, { colunaB: event.target.value.split("\n") })} style={{ ...inputStyle, minHeight: 75, resize: "vertical", fontSize: 11 }} /></>
+                              )}
+                              <label style={{ fontSize: 10, color: cores.textSub }}>Resposta do professor</label>
+                              <input value={questao.resposta || ""} onChange={(event) => editarQuestaoPro(index, { resposta: event.target.value })} style={{ ...inputStyle, fontSize: 11 }} />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={adicionarQuestaoPro} style={{ ...nextBtnStyle, marginTop: 12, padding: "10px 12px", fontSize: 12 }}>＋ Acrescentar questão</button>
+                    <p style={{ fontSize: 10, lineHeight: 1.45, color: cores.textSub, margin: "12px 0 0" }}>Todas as alterações serão usadas no Word do aluno e do professor.</p>
+                  </div>
+                </aside>
               </div>
             )}
           </div>
