@@ -6,6 +6,7 @@ import { buildPrompt } from "./prompts/buildActivityPrompt.js";
 import { renderMarkdown } from "./utils/markdown.js";
 import { buildWordHeader } from "./utils/wordHeader.js";
 import { downloadProActivityDocx, downloadStandardActivityDocx } from "./utils/wordDocx.js";
+import { normalizeProActivity } from "./utils/wordSearch.js";
 
 export default function App() {
   // Autenticação
@@ -395,6 +396,9 @@ Comece com "Prezado(a) responsável," e termine com "Atenciosamente, Equipe Peda
     const descricaoTiposPro = tiposProSelecionados
       .map((item, indice) => `${indice + 1}º — ${item.nome}: ${item.quantidade} questão(ões); área de resposta: ${item.area}`)
       .join("\n- ");
+    const solicitouCacaPalavras = tiposProSelecionados.some((item) =>
+      /ca[cç]a\s*-?\s*palavras?|palavras?\s+escondidas?/i.test(item.nome || "")
+    );
 
     const prompt = `Você é um especialista em educação do Colégio Gênesis Life, em Osasco-SP. Gere uma atividade escolar em formato JSON.
 
@@ -430,7 +434,11 @@ Orientações:
 Aplique APENAS as relevantes.` : ""}
 
 REGRAS IMPORTANTES:
-1. SEMPRE comece com um TEXTO BASE sobre o tema. Esse texto é o CORAÇÃO da atividade — TODAS as respostas de TODAS as questões devem ser encontradas nele.
+1. SEMPRE comece com um TEXTO BASE de qualidade sobre o tema. Ele é o CORAÇÃO da atividade:
+- Escreva um título e um texto coerente, correto, interessante e adequado à série, com começo, desenvolvimento e conclusão.
+- Use parágrafos curtos, vocabulário compatível com a faixa etária e exemplos concretos. Não entregue uma lista de frases soltas, definições genéricas ou texto de preenchimento.
+- O texto deve ter conteúdo suficiente para sustentar TODAS as questões. TODAS as respostas factuais devem estar claramente no texto, sem revelar diretamente qual alternativa é correta.
+- Para Educação Infantil e 1º/2º ano, use 60 a 100 palavras. Do 3º ao 5º ano, 100 a 180 palavras. Do 6º ao 9º ano, 180 a 280 palavras. No Ensino Médio, 220 a 350 palavras.
 2. Questões de ALTERNATIVAS: respostas que o aluno encontra no texto base. EXATAMENTE 3 opções: A, B e C.
 3. Questões de COMPLETE: frases retiradas ou baseadas no texto base.
 4. Questões de RELACIONE/LIGUE/ASSOCIAÇÃO:
@@ -448,6 +456,10 @@ REGRAS IMPORTANTES:
 10. Respeite EXATAMENTE os tipos, as quantidades e a ordem solicitados. Em cada questão, informe "areaResposta" com o valor configurado para seu tipo.
 11. IMAGENS: Marque EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS. Inclua "com textos em português" no prompt. As outras: "precisaImagem": false e "promptImagem": null.
 12. NUNCA destaque, marque ou revele a resposta correta no enunciado ou nas alternativas. Não use asteriscos de Markdown, negrito, itálico, letras maiúsculas diferentes, símbolos ou qualquer formatação que entregue a resposta ao aluno.
+${solicitouCacaPalavras ? `13. CAÇA-PALAVRAS:
+- Para cada questão desse tipo, use "tipo": "caca_palavras" e preencha "cacaPalavras" com 6 a 10 palavras importantes retiradas EXATAMENTE do texto base.
+- Retorne somente a lista em "palavras" e o "tamanho" entre 10 e 14. O sistema montará a grade; não escreva a grade no enunciado.
+- Use palavras sem espaços, preferencialmente substantivos relevantes ao tema.` : "13. Nas questões que não forem caça-palavras, use \"cacaPalavras\": null."}
 
 Responda APENAS com JSON válido, sem markdown, neste formato:
 {
@@ -460,6 +472,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       "areaResposta": "media",
       "colunaA": null,
       "colunaB": null,
+      "cacaPalavras": null,
       "precisaImagem": false,
       "promptImagem": null,
       "alternativas": ["A) ...", "B) ...", "C) ..."],
@@ -472,6 +485,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       "areaResposta": "pequena",
       "colunaA": null,
       "colunaB": null,
+      "cacaPalavras": null,
       "precisaImagem": true,
       "promptImagem": "Ilustração didática do sistema solar mostrando o sol no centro, com textos em português, fundo branco",
       "alternativas": null,
@@ -484,11 +498,25 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       "areaResposta": "media",
       "colunaA": ["1. Sol", "2. Terra", "3. Lua"],
       "colunaB": ["A. Satélite natural", "B. Estrela", "C. Planeta"],
+      "cacaPalavras": null,
       "precisaImagem": false,
       "promptImagem": null,
       "alternativas": null,
       "resposta": "1-B, 2-C, 3-A"
-    }
+    }${solicitouCacaPalavras ? `,
+    {
+      "numero": 4,
+      "tipo": "caca_palavras",
+      "enunciado": "Encontre no caça-palavras os termos estudados no texto.",
+      "areaResposta": "media",
+      "colunaA": null,
+      "colunaB": null,
+      "cacaPalavras": { "palavras": ["SOL", "TERRA", "LUA", "PLANETA", "ESTRELA", "SISTEMA"], "tamanho": 12 },
+      "precisaImagem": false,
+      "promptImagem": null,
+      "alternativas": null,
+      "resposta": "SOL, TERRA, LUA, PLANETA, ESTRELA, SISTEMA"
+    }` : ""}
   ],
   "gabarito": ${proGabarito ? '"gabarito completo com todas as respostas"' : "null"},
   "dicasProfessor": "Dicas e observações para o professor: como aplicar esta atividade, adaptações sugeridas, pontos de atenção sobre o aluno."
@@ -525,6 +553,7 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
         throw new Error("A IA não retornou questões válidas. Tente novamente.");
       }
 
+      resultado = normalizeProActivity(resultado);
       setProResultado(resultado);
 
       // Gerar imagens
@@ -1521,10 +1550,22 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
                           </div>
                         </div>
                       )}
-                      {!q.colunaA && q.alternativas && q.alternativas.map((a, i) => (
+                      {Array.isArray(q.cacaPalavras?.grade) && (
+                        <div style={{ margin: "14px auto", maxWidth: 430 }}>
+                          <div style={{ display: "grid", gridTemplateColumns: `repeat(${q.cacaPalavras.grade[0]?.length || 1}, 1fr)`, border: "1px solid #777" }}>
+                            {q.cacaPalavras.grade.flatMap((linha, linhaIndex) => linha.map((letra, colunaIndex) => (
+                              <span key={`${linhaIndex}-${colunaIndex}`} style={{ aspectRatio: "1", display: "grid", placeItems: "center", border: "1px solid #bbb", fontSize: 13, fontWeight: 700 }}>
+                                {letra}
+                              </span>
+                            )))}
+                          </div>
+                          <p style={{ fontSize: 12, lineHeight: 1.6, marginTop: 10 }}><strong>Palavras:</strong> {q.cacaPalavras.palavras.join(" • ")}</p>
+                        </div>
+                      )}
+                      {!q.colunaA && !q.cacaPalavras && q.alternativas && q.alternativas.map((a, i) => (
                         <p key={i} style={{ fontSize: 13, marginLeft: 16 }}>{a}</p>
                       ))}
-                      {!q.colunaA && !q.alternativas && (
+                      {!q.colunaA && !q.cacaPalavras && !q.alternativas && (
                         <div style={{
                           minHeight: q.areaResposta === "pequena" ? 30 : q.areaResposta === "grande" || q.areaResposta === "quadro" ? 100 : q.areaResposta === "linhas" ? 75 : 60,
                           border: "1px solid #ccc", borderRadius: 6, marginTop: 10,
