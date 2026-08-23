@@ -18,25 +18,66 @@ export default function App() {
   const [verificandoAuth, setVerificandoAuth] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let ativo = true;
+
+    const carregarSessao = async () => {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (!ativo) return;
+      if (sessionError) console.error("Erro ao recuperar sessão:", sessionError.message);
       setUsuario(session?.user || null);
       setVerificandoAuth(false);
+    };
+
+    carregarSessao();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!ativo) return;
+      if (session?.user) {
+        setUsuario(session.user);
+        setVerificandoAuth(false);
+      } else if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+        setUsuario(null);
+      }
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUsuario(session?.user || null);
-    });
-    return () => subscription.unsubscribe();
+
+    const recuperarAoVoltar = async () => {
+      if (document.visibilityState !== "visible") return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!ativo || !session) return;
+      if (session.expires_at && session.expires_at * 1000 <= Date.now() + 60_000) {
+        const { data: { session: renovada }, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error("Erro ao renovar sessão:", refreshError.message);
+          return;
+        }
+        if (renovada?.user) setUsuario(renovada.user);
+      } else {
+        setUsuario(session.user);
+      }
+    };
+
+    document.addEventListener("visibilitychange", recuperarAoVoltar);
+    window.addEventListener("online", recuperarAoVoltar);
+
+    return () => {
+      ativo = false;
+      subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", recuperarAoVoltar);
+      window.removeEventListener("online", recuperarAoVoltar);
+    };
   }, []);
 
   const fazerLogin = async () => {
     setLoginErro("");
     setLoginLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password: loginSenha,
     });
     if (error) {
       setLoginErro("Email ou senha incorretos.");
+    } else if (data.session?.user) {
+      setUsuario(data.session.user);
     }
     setLoginLoading(false);
   };
