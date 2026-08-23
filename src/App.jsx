@@ -403,10 +403,12 @@ Comece com "Prezado(a) responsável," e termine com "Atenciosamente, Equipe Peda
     const prompt = `Você é um especialista em educação do Colégio Gênesis Life, em Osasco-SP. Gere uma atividade escolar em formato JSON.
 
 SÉRIE: ${proAlunoSelecionado?.serie || proSerie}
+SEGMENTO: ${proSegmento}
 DISCIPLINA: ${proDisciplina}
 TEMA: ${proTema}
 QUANTIDADE TOTAL DE QUESTÕES: ${totalProQuestoes}
 DIFICULDADE: ${proDificuldade}
+${proDificuldade === "progressivo" ? `PROGRESSÃO DE DIFICULDADE: organize as questões do nível mais simples ao mais desafiador, começando com recuperação direta de informações do texto e avançando para interpretação e aplicação. Não misture a ordem dos níveis.` : `Mantenha todas as questões no nível de dificuldade "${proDificuldade}", adequado à série.`}
 TIPOS DE QUESTÃO, QUANTIDADES, ORDEM E ÁREA DE RESPOSTA (siga EXATAMENTE):
 - ${descricaoTiposPro}
 ${proGabarito ? "INCLUIR GABARITO" : "SEM GABARITO"}
@@ -425,10 +427,10 @@ ADAPTAÇÕES ESPECIAIS — adapte a atividade considerando:
 ${proNecessidades.map(n => `- ${n}`).join("\n")}
 
 Orientações:
-- Dificuldade de leitura: enunciados curtos, palavras simples, priorizar visual.
-- TDAH: questões diretas, uma instrução por vez, variar tipos.
+- Dificuldade de leitura: enunciados curtos, palavras simples, evitar blocos longos e priorizar apoio visual.
+- TDAH: questões diretas, uma instrução por vez, atividade mais curta e tipos variados.
 - TEA: comandos literais, evitar figuras de linguagem, roteiro previsível, apoio visual.
-- Deficiência intelectual: reduzir complexidade, imagens de apoio, linguagem concreta.
+- Deficiência intelectual: reduzir complexidade, usar imagens de apoio, repetir padrões e adotar linguagem concreta.
 - Alfabetização em processo: letras maiúsculas, frases curtas, apoio de imagem.
 - Comandos mais curtos: uma ação por enunciado.
 Aplique APENAS as relevantes.` : ""}
@@ -449,17 +451,19 @@ REGRAS IMPORTANTES:
 - Para esse tipo, use "alternativas": null.
 - Informe as correspondências apenas em "resposta", no formato "1-C, 2-A, 3-B".
 5. NENHUMA questão pode exigir conhecimento que não esteja no texto base (exceto "Desenhe" e criatividade).
-6. Enunciados objetivos, claros e curtos, adequados à faixa etária.
-7. Adapte a linguagem e complexidade à série.
-8. Use linguagem acolhedora e motivadora.
-9. Numere todas as questões sequencialmente.
-10. Respeite EXATAMENTE os tipos, as quantidades e a ordem solicitados. Em cada questão, informe "areaResposta" com o valor configurado para seu tipo.
-11. IMAGENS: Marque EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS. Inclua "com textos em português" no prompt. As outras: "precisaImagem": false e "promptImagem": null.
-12. NUNCA destaque, marque ou revele a resposta correta no enunciado ou nas alternativas. Não use asteriscos de Markdown, negrito, itálico, letras maiúsculas diferentes, símbolos ou qualquer formatação que entregue a resposta ao aluno.
-${solicitouCacaPalavras ? `13. CAÇA-PALAVRAS:
+6. Questões de PROCURE NO TEXTO devem pedir que o aluno localize uma informação claramente presente no texto base.
+7. Para "Desenhe" e "Use sua criatividade", crie comandos estimulantes relacionados ao tema do texto, sem exigir uma única resposta factual.
+8. Enunciados objetivos, claros e curtos, adequados à faixa etária.
+9. Adapte a linguagem e complexidade à série.
+10. Use linguagem acolhedora e motivadora.
+11. Numere todas as questões sequencialmente.
+12. Respeite EXATAMENTE os tipos, as quantidades e a ordem solicitados. Em cada questão, informe "areaResposta" com o valor configurado para seu tipo.
+13. IMAGENS: Marque EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS. Inclua "com textos em português" no prompt. As outras: "precisaImagem": false e "promptImagem": null.
+14. NUNCA destaque, marque ou revele a resposta correta no enunciado ou nas alternativas. Todas as opções A, B e C devem ter EXATAMENTE a mesma formatação. Não use asteriscos de Markdown, negrito, itálico, letras maiúsculas diferentes, símbolos ou qualquer formatação que entregue a resposta ao aluno.
+${solicitouCacaPalavras ? `15. CAÇA-PALAVRAS:
 - Para cada questão desse tipo, use "tipo": "caca_palavras" e preencha "cacaPalavras" com 6 a 10 palavras importantes retiradas EXATAMENTE do texto base.
 - Retorne somente a lista em "palavras" e o "tamanho" entre 10 e 14. O sistema montará a grade; não escreva a grade no enunciado.
-- Use palavras sem espaços, preferencialmente substantivos relevantes ao tema.` : "13. Nas questões que não forem caça-palavras, use \"cacaPalavras\": null."}
+- Use palavras sem espaços, com no máximo 16 letras, preferencialmente substantivos relevantes ao tema.` : "15. Nas questões que não forem caça-palavras, use \"cacaPalavras\": null."}
 
 Responda APENAS com JSON válido, sem markdown, neste formato:
 {
@@ -2323,4 +2327,3 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
     </div>
   );
 }
-
