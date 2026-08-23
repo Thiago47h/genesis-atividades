@@ -105,7 +105,9 @@ export default function App() {
 
   const fazerLogout = async () => {
     logoutIntencional.current = true;
-    await supabase.auth.signOut();
+    // Encerra somente esta sessão. O modo global revogaria também os logins
+    // abertos em outros navegadores, aparelhos ou versões do site.
+    await supabase.auth.signOut({ scope: "local" });
     setUsuario(null);
   };
 
