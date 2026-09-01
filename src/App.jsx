@@ -9,6 +9,47 @@ import { downloadProActivityDocx, downloadStandardActivityDocx } from "./utils/w
 import { normalizeProActivity } from "./utils/wordSearch.js";
 import { composeActivityMarkdown, parseActivityMarkdown } from "./utils/activityEditor.js";
 
+const VERSICULOS_DIARIOS = [
+  { texto: "O Senhor é o meu pastor; nada me faltará.", referencia: "Salmos 23:1" },
+  { texto: "Tudo posso naquele que me fortalece.", referencia: "Filipenses 4:13" },
+  { texto: "Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará.", referencia: "Salmos 37:5" },
+  { texto: "O choro pode durar uma noite, mas a alegria vem pela manhã.", referencia: "Salmos 30:5" },
+  { texto: "Porque para Deus nada é impossível.", referencia: "Lucas 1:37" },
+  { texto: "O Senhor é a minha luz e a minha salvação; a quem temerei?", referencia: "Salmos 27:1" },
+  { texto: "A resposta branda desvia o furor.", referencia: "Provérbios 15:1" },
+  { texto: "Bem-aventurados os pacificadores, porque eles serão chamados filhos de Deus.", referencia: "Mateus 5:9" },
+  { texto: "Lâmpada para os meus pés é tua palavra e luz para o meu caminho.", referencia: "Salmos 119:105" },
+  { texto: "Confia no Senhor de todo o teu coração.", referencia: "Provérbios 3:5" },
+  { texto: "Alegrai-vos sempre no Senhor.", referencia: "Filipenses 4:4" },
+  { texto: "O amor é paciente, o amor é bondoso.", referencia: "1 Coríntios 13:4" },
+  { texto: "Sede fortes e corajosos; não temais.", referencia: "Deuteronômio 31:6" },
+  { texto: "Os que esperam no Senhor renovarão as suas forças.", referencia: "Isaías 40:31" },
+  { texto: "Este é o dia que fez o Senhor; alegremo-nos nele.", referencia: "Salmos 118:24" },
+  { texto: "Pedi, e dar-se-vos-á; buscai, e encontrareis.", referencia: "Mateus 7:7" },
+  { texto: "O coração alegre serve de bom remédio.", referencia: "Provérbios 17:22" },
+  { texto: "Deus é o nosso refúgio e fortaleza.", referencia: "Salmos 46:1" },
+  { texto: "A fé é o firme fundamento das coisas que se esperam.", referencia: "Hebreus 11:1" },
+  { texto: "Não temas, porque eu sou contigo.", referencia: "Isaías 41:10" },
+  { texto: "Em tudo dai graças.", referencia: "1 Tessalonicenses 5:18" },
+  { texto: "O fruto do Espírito é amor, alegria, paz, paciência e bondade.", referencia: "Gálatas 5:22" },
+  { texto: "Ensina-nos a contar os nossos dias, para alcançarmos coração sábio.", referencia: "Salmos 90:12" },
+  { texto: "Buscai primeiro o Reino de Deus e a sua justiça.", referencia: "Mateus 6:33" },
+  { texto: "Eu é que sei os pensamentos que tenho a vosso respeito, pensamentos de paz.", referencia: "Jeremias 29:11" },
+  { texto: "A tua palavra é a verdade.", referencia: "João 17:17" },
+  { texto: "Melhor é serem dois do que um.", referencia: "Eclesiastes 4:9" },
+  { texto: "O amigo ama em todos os momentos.", referencia: "Provérbios 17:17" },
+  { texto: "Revesti-vos de amor, que é o vínculo da perfeição.", referencia: "Colossenses 3:14" },
+  { texto: "Sede bondosos e compassivos uns para com os outros.", referencia: "Efésios 4:32" },
+  { texto: "A sabedoria é a coisa principal; adquire, pois, a sabedoria.", referencia: "Provérbios 4:7" },
+];
+
+function obterVersiculoDoDia() {
+  const hoje = new Date();
+  const inicioDoAno = new Date(hoje.getFullYear(), 0, 0);
+  const diaDoAno = Math.floor((hoje - inicioDoAno) / 86_400_000);
+  return VERSICULOS_DIARIOS[(diaDoAno - 1) % VERSICULOS_DIARIOS.length];
+}
+
 export default function App() {
   // Autenticação
   const [usuario, setUsuario] = useState(null);
@@ -18,6 +59,7 @@ export default function App() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [verificandoAuth, setVerificandoAuth] = useState(true);
   const logoutIntencional = useRef(false);
+  const versiculoDoDia = obterVersiculoDoDia();
 
   useEffect(() => {
     let ativo = true;
@@ -1082,21 +1124,50 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
             </div>
 
             <div style={{
-              display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 0, marginBottom: 48,
-              background: "#1F3A3D", borderRadius: 16, overflow: "hidden",
-              boxShadow: "0 12px 32px rgba(34,32,29,0.14)",
+              position: "relative", display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 0, marginBottom: 48, overflow: "hidden",
+              background: "linear-gradient(135deg, #5E1451 0%, #3D0C34 52%, #26071F 100%)",
+              border: "1px solid rgba(255,214,90,0.26)", borderRadius: 18,
+              boxShadow: "0 18px 46px rgba(75,18,63,0.24)",
             }}>
-              <div style={{ padding: 44, color: "#F3EFE6" }}>
-                <div style={{ fontSize: 26, fontWeight: 600, marginBottom: 10 }}>Comece agora</div>
-                <p style={{ margin: "0 0 24px", fontSize: 15, lineHeight: 1.55, color: "#D8E3E1", maxWidth: 420 }}>
+              <div style={{ padding: "42px 44px", color: "#FFFFFF" }}>
+                <div style={{ width: 44, height: 3, borderRadius: 99, background: "#FFD65A", marginBottom: 20 }} />
+                <div style={{ fontSize: 27, fontWeight: 700, marginBottom: 10 }}>Comece agora</div>
+                <p style={{ margin: "0 0 24px", fontSize: 15, lineHeight: 1.65, color: "#F0E7EE", maxWidth: 420 }}>
                   Comece gerando uma atividade adaptada para seus alunos!
                 </p>
                 <button onClick={() => setPagina("gerador")} style={{
-                  background: "#C1683C", color: "#FAF3EA", border: "none", borderRadius: 8,
+                  background: "#FFD65A", color: "#3A1732", border: "none", borderRadius: 9,
                   padding: "13px 24px", fontWeight: 700, fontSize: 14.5, cursor: "pointer",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
                 }}>
                   Gerar atividade →
                 </button>
+              </div>
+              <div style={{
+                margin: 18, padding: "28px 30px", alignSelf: "stretch",
+                display: "flex", flexDirection: "column", justifyContent: "center",
+                color: "#FFFFFF", background: "rgba(255,255,255,0.09)",
+                border: "1px solid rgba(255,255,255,0.14)", borderRadius: 14,
+                backdropFilter: "blur(8px)",
+              }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 9, marginBottom: 16,
+                  color: "#FFE99B", fontSize: 11, fontWeight: 700,
+                  letterSpacing: ".14em", textTransform: "uppercase",
+                }}>
+                  <span style={{ fontSize: 15 }}>✦</span> Versículo do dia
+                </div>
+                <blockquote style={{
+                  margin: 0, fontFamily: "Georgia, serif", fontSize: 21,
+                  fontWeight: 600, lineHeight: 1.5, color: "#FFFFFF",
+                }}>
+                  “{versiculoDoDia.texto}”
+                </blockquote>
+                <div style={{ marginTop: 16, color: "#FFD65A", fontSize: 13, fontWeight: 700 }}>
+                  {versiculoDoDia.referencia}
+                </div>
               </div>
             </div>
           </div>
