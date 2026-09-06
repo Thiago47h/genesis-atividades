@@ -644,9 +644,11 @@ REGRAS IMPORTANTES:
 13. IMAGENS: Marque EXATAMENTE ${maxImgs} questão(ões) com "precisaImagem": true. Para cada uma, escreva um "promptImagem" detalhado EM PORTUGUÊS. Inclua "com textos em português" no prompt. As outras: "precisaImagem": false e "promptImagem": null.
 14. NUNCA destaque, marque ou revele a resposta correta no enunciado ou nas alternativas. Todas as opções A, B e C devem ter EXATAMENTE a mesma formatação. Não use asteriscos de Markdown, negrito, itálico, letras maiúsculas diferentes, símbolos ou qualquer formatação que entregue a resposta ao aluno.
 ${solicitouCacaPalavras ? `15. CAÇA-PALAVRAS:
-- Para cada questão desse tipo, use "tipo": "caca_palavras" e preencha "cacaPalavras" com 6 a 10 palavras importantes retiradas EXATAMENTE do texto base.
-- Retorne somente a lista em "palavras" e o "tamanho" entre 10 e 14. O sistema montará a grade; não escreva a grade no enunciado.
-- Use palavras sem espaços, com no máximo 16 letras, preferencialmente substantivos relevantes ao tema.` : "15. Nas questões que não forem caça-palavras, use \"cacaPalavras\": null."}
+- Para cada questão desse tipo, use "tipo": "caca_palavras" e preencha "cacaPalavras" com palavras importantes retiradas do texto base.
+- Crie você mesmo o caça-palavras completo, como em uma atividade tradicional: enunciado, grade de letras e lista de palavras para encontrar.
+- Retorne a grade em "grade", como um array de linhas, cada linha um array de letras maiúsculas. Todas as linhas devem ter o mesmo tamanho. Liste os termos em "palavras". Não escreva a grade no enunciado.
+- Escolha quantidade de palavras e tamanho da grade adequados à série e ao pedido do professor. Use palavras do texto base, sem espaços ou acentos na grade.
+- Confira que TODAS as palavras listadas aparecem inteiras na grade. Não destaque as respostas.` : "15. Nas questões que não forem caça-palavras, use \"cacaPalavras\": null."}
 
 Responda APENAS com JSON válido, sem markdown, neste formato:
 {
@@ -698,11 +700,11 @@ Responda APENAS com JSON válido, sem markdown, neste formato:
       "areaResposta": "media",
       "colunaA": null,
       "colunaB": null,
-      "cacaPalavras": { "palavras": ["SOL", "TERRA", "LUA", "PLANETA", "ESTRELA", "SISTEMA"], "tamanho": 12 },
+      "cacaPalavras": { "palavras": ["SOL", "LUA"], "grade": [["S", "O", "L", "A"], ["B", "C", "D", "E"], ["L", "U", "A", "F"], ["G", "H", "I", "J"]] },
       "precisaImagem": false,
       "promptImagem": null,
       "alternativas": null,
-      "resposta": "SOL, TERRA, LUA, PLANETA, ESTRELA, SISTEMA"
+      "resposta": "SOL: linha 1; LUA: linha 3"
     }` : ""}
   ],
   "gabarito": ${proGabarito ? '"gabarito completo com todas as respostas"' : "null"},
