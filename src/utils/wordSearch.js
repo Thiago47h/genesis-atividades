@@ -77,6 +77,9 @@ export function normalizeProActivity(activity) {
   return {
     ...activity,
     questoes: (activity?.questoes || []).map((question) => {
+      // Preserve the complete puzzle supplied by the AI. Legacy activities
+      // containing only a word list still use the previous generator.
+      if (Array.isArray(question?.cacaPalavras?.grade)) return question;
       const words = question?.cacaPalavras?.palavras;
       if (!Array.isArray(words) || words.length === 0) return question;
       return {
